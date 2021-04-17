@@ -1,0 +1,14 @@
+{{title}}, Willkommen auf der Karte von morgen!
+Willkommen auf der Karte von morgen!
+
+Du oder einer deiner Fans, KundInnen oder UnterstützerInnen hat euer Projekt am {{created}} auf der Karte von morgen eingetragen, der Plattform für den Wandel. Herzlichen Glückwunsch! Das bedeutet, dass ihr zukunftsfähige Arbeit macht und Teil einer Welt von morgen seid.
+
+Sehr gerne könnt ihr eure Beschreibung verbessern oder positive Aspekte (Bewertungen) eures Projektes hinzufügen. [Link zum Eintrag]({{link}})
+
+Und natürlich könnt ihr viele weitere Partner und Initiativen kartieren und bewerten, mit denen ihr in Kontakt steht und die sinnvolles für Mensch und Umwelt tun. Alles weitere zur Idee der Karte von morgen findet ihr hier: https://blog.vonmorgen.org/
+Sehr gerne könnt ihr die Karte von morgen auf eurer Homepage einbetten, sodass euch interessierte Menschen schnell entdecken können. (Mehr zu den Iframes: https://blog.vonmorgen.org/iframes/)
+
+Die Karte von morgen wird euch für immer kostenfrei zur Verfügung stehen. Für die Entwicklung weiterer Funktionen sind wir auf Spenden angewiesen. Wenn für jede Initiative monatlich 3 € und für jedes Unternehmen monatlich 12 € gespendet werden, kann sich diese Plattform unabhängig und organisch entwickeln. Jetzt ganz einfach online spenden! https://blog.vonmorgen.org/spenden/ 
+
+Viel Erfolg und macht weiter so!
+Deine Regionalpilotin und euer Team von morgen

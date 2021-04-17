@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "serve": "parcel app/dev/index.html",
+    "css-build": "node-sass --omit-source-map-url app/dev/bulma-cfg.scss app/dev/bulma-cfg.css",
+    "css-watch": "npm run css-build -- --watch"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "marked": "^2.0.3",
+    "nodemailer": "^6.5.0",
+    "xhr2": "^0.2.1"
+  },
+  "devDependencies": {
+    "bulma": "^0.9.2",
+    "node-sass": "^5.0.0",
+    "parcel": "1.12.3"
+  }
+}
