@@ -13,6 +13,7 @@ You can edit this file as you like.
   , "js-timers"
   , "node-fs"
   , "nodemailer"
+  , "node-process"
   , "now"
   , "psci-support"
   , "spec"

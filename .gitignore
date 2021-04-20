@@ -12,7 +12,8 @@
 dist/
 prod/*
 
-/sent.log
+.env
+/*.log
 /state.json
 /settings.json
 /template.txt

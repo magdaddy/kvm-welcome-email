@@ -1,9 +1,8 @@
 module WelcomeEmail.App.Env where
 
-import Prelude
 
 type Env =
-  { defaultEntry :: DefaultEntry
+  { --defaultEntry :: DefaultEntry
   }
 
 type DefaultEntry =

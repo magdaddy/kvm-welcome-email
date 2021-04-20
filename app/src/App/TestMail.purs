@@ -8,10 +8,8 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Console (log)
 import Formless (Validation, hoistFnE_)
 import Formless as F
-import Halogen (liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -19,6 +17,7 @@ import Halogen.HTML.Properties as HP
 import Network.RemoteData (RemoteData(..))
 import Type.Proxy (Proxy(..))
 import WelcomeEmail.App.Caps (class ManageSettings, class SendTestMail, sendTestMail)
+import WelcomeEmail.App.Util (cls)
 import WelcomeEmail.Shared.Boundary (TestMailPayload)
 
 
@@ -73,13 +72,17 @@ component = H.mkComponent
       }
 
     renderFormless st =
-      HH.div_
-        [ HH.button
-            [ HE.onClick \_ -> F.submit ]
-            [ HH.text "Send test mail to" ]
-        , HH.input
-            [ HP.value $ F.getInput _emailAddr st.form
-            , HE.onValueInput (F.set _emailAddr)
+      HH.div [ cls "field has-addons" ]
+        [ HH.p [ cls "control" ]
+            [ HH.button
+                [ cls "button is-primary", HE.onClick \_ -> F.submit ]
+                [ HH.text "Send test mail to" ]
+            ]
+        , HH.p [ cls "control is-expanded" ]
+            [ HH.input
+                [ cls "input", HP.value $ F.getInput _emailAddr st.form
+                , HE.onValueInput (F.set _emailAddr)
+                ]
             ]
         ]
       where

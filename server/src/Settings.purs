@@ -4,15 +4,13 @@ import Prelude
 
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import Data.String (Pattern(..), drop, indexOf, splitAt)
 import Effect (Effect)
-import Effect.Console (log)
 import Effect.Exception (try)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (readTextFile, writeTextFile)
-import Simple.JSON (readJSON, writeJSON)
+import Simple.JSON (readJSON)
 import WelcomeEmail.Server.Data (AppError(..))
+import WelcomeEmail.Server.Log (log)
 import WelcomeEmail.Shared.Boundary (Settings, defaultSettings)
 import WelcomeEmail.Shared.Util (writeJSONPretty)
 

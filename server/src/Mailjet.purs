@@ -6,15 +6,15 @@ import Affjax as AX
 import Affjax.RequestBody (json)
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
-import Data.Argonaut (encodeJson, stringify)
+import Data.Argonaut (encodeJson)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.MediaType.Common (applicationJSON)
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_, message)
+import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
-import Effect.Console (log)
+import WelcomeEmail.Server.Log (log)
 
 
 basicAuthHeader :: RequestHeader
@@ -41,21 +41,5 @@ send = do
       content = Just reqBody,
       responseFormat = ResponseFormat.string
       }
-  reqBody = json $ encodeJson mail
+  reqBody = json $ encodeJson {}
 
-
-mail =
-  { "Messages": [
-    {
-        "From": {
-          "Email": "magnus.herold@gmail.com",
-          "Name": "Magnus Gmail"
-        },
-        "To": [{
-          "Email": "magnus.herold@slowtec.de",
-          "Name": "Magnus Slowtec"
-        }],
-        "Subject": "Test1",
-        "TextPart": "Yo, this is test 1."
-    }
-    ] }

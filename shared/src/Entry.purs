@@ -17,6 +17,8 @@ type Entry
     , title :: String
     , created :: Number
     , version :: Int
+    , contact_name :: Maybe String
+    , email :: Maybe String
     }
 
 formatDateTime :: String -> DateTime -> String

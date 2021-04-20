@@ -9,6 +9,7 @@
     "express": "^4.17.1",
     "marked": "^2.0.3",
     "nodemailer": "^6.5.0",
+    "winston": "^3.3.3",
     "xhr2": "^0.2.1"
   },
   "devDependencies": {

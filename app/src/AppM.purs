@@ -17,10 +17,9 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
 import Simple.JSON (readJSON, writeJSON)
 import Type.Equality (class TypeEquals, from)
-import WelcomeEmail.App.Caps (class ManageSettings, class ManageTemplate, class SendTestMail, sendTestMail)
+import WelcomeEmail.App.Caps (class ManageSettings, class ManageTemplate, class SendTestMail)
 import WelcomeEmail.App.Data (AppError(..))
 import WelcomeEmail.App.Env (Env)
-import WelcomeEmail.Shared.Boundary (TestMailResponse)
 
 newtype AppM a = AppM (ReaderT Env Aff a)
 

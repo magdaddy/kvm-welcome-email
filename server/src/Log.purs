@@ -1,54 +1,51 @@
-module Log where
+module WelcomeEmail.Server.Log where
 
 import Prelude
 
-import Data.Array (mapMaybe)
-import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
-import Data.DateTime.Instant (Instant)
-import Data.Maybe (Maybe(..))
-import Data.String (Pattern(..), split)
-import Data.String.Regex (Regex, match)
-import Data.String.Regex.Flags as Flags
-import Data.String.Regex.Unsafe (unsafeRegex)
+import Data.Generic.Rep (class Generic)
+import Data.Show.Generic (genericShow)
 import Effect (Effect)
-import Effect.Now (now)
-import Node.Encoding (Encoding(..))
-import Node.FS.Sync (appendTextFile, readTextFile)
-import WelcomeEmail.Shared.Entry (Entry, formatInstant)
+import WelcomeEmail.Server.Winston as W
+import WelcomeEmail.Shared.Entry (Entry)
 
-filename :: String
-filename = "sent.log"
+data LogLevel
+  = Error
+  | Warn
+  | Info
+  | Http
+  | Verbose
+  | Debug
+  | Silly
 
-logLine :: Instant -> Entry -> String
-logLine ts entry = tsStr <> " | " <> entry.id <> " | v" <> version <> " | " <> entry.title <> "\n"
+derive instance genericLogLevel :: Generic LogLevel _
+
+instance showLogLevel :: Show LogLevel where
+  show = genericShow
+
+
+log :: String -> Effect Unit
+log str = logL Info str
+
+logL :: LogLevel -> String -> Effect Unit
+-- logL level str = C.log $ (show level) <> ": " <> str
+logL level str = W.log { level: winstonLevel level, message: str }
+
+
+logSent :: Entry -> Boolean -> Effect Unit
+logSent entry wasSent = W.log { level, message, wasSent, entry }
   where
-  tsStr = ts # formatInstant
-  version = entry.version # show
+  level = winstonLevel Info
+  message
+    | wasSent = "Email was sent to " <> entry.title <> "."
+    | otherwise = "No email was sent to " <> entry.title <> " because it has no email address."
 
-appendLog :: Entry -> Effect Unit
-appendLog entry = do
-  ts <- now
-  appendTextFile UTF8 filename (logLine ts entry)
-  pure unit
 
-r1 = unsafeRegex """\|\s([0-9a-f]{32})\s\|""" Flags.global :: Regex
-l1 = "2021-04-04 15:15:51 | 2c8e486e3ce4d74bb1b64247ed5351e | v0 | Gemeindehaus St. Lorenz" :: String
-
-readLogIds :: Effect (Array String)
-readLogIds = do
-  content <- readTextFile UTF8 filename
-  pure $ extractIdsFromLog content
-
--- simply ignore non-matching lines
-extractIdsFromLog :: String -> Array String
-extractIdsFromLog content = mapMaybe extractId lines
-  where
-  lines = split (Pattern "\n") content
-
-  idRgx :: Regex
-  idRgx = unsafeRegex """\|\s([0-9a-f]{32})\s\|""" Flags.noFlags
-
-  extractId :: String -> Maybe String
-  extractId line = case match idRgx line of
-    Just (NonEmptyArray [_, (Just id)]) -> Just id
-    _ -> Nothing
+winstonLevel :: LogLevel -> String
+winstonLevel = case _ of
+  Error -> "error"
+  Warn -> "warn"
+  Info -> "info"
+  Http -> "http"
+  Verbose -> "verbose"
+  Debug -> "debug"
+  Silly -> "silly"

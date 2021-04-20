@@ -9,8 +9,8 @@ import Effect.Exception as Exn
 import Foreign (MultipleErrors)
 import Halogen as H
 import Network.RemoteData (RemoteData)
-import WelcomeEmail.App.Env (DefaultEntry)
 import WelcomeEmail.Shared.Boundary (Settings)
+import WelcomeEmail.Shared.Entry (Entry)
 import WelcomeEmail.Shared.Template (EmailTemplate)
 
 
@@ -33,11 +33,10 @@ instance showPage :: Show Page where
 
 type State =
   { count :: Int
-  , defaultEntry :: DefaultEntry
+  , defaultEntry :: Entry
   , settings :: RemoteData AppError Settings
   , page :: Page
   , templatePage :: TemplatePageState
-  , testMailAddr :: String
   }
 
 type TemplatePageState =

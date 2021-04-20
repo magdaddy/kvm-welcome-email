@@ -11,7 +11,6 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (throw)
-import Effect.Exception.Unsafe (unsafeThrow)
 import Halogen (liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
@@ -22,9 +21,11 @@ import Network.RemoteData (RemoteData(..), _Success, fromEither)
 import Type.Proxy (Proxy(..))
 import WelcomeEmail.App.Caps (class ManageSettings, class ManageTemplate, class SendTestMail, getSettings, getTemplate, saveTemplate, sendTestMail)
 import WelcomeEmail.App.Data (Action(..), Page(..), Slots, State)
-import WelcomeEmail.App.Env (DefaultEntry)
+import WelcomeEmail.App.StatusPage as StatusPage
 import WelcomeEmail.App.SettingsPage as SettingsPage
 import WelcomeEmail.App.TemplatePage as TemplatePage
+import WelcomeEmail.App.Util (cls)
+import WelcomeEmail.Shared.Entry (Entry)
 import WelcomeEmail.Shared.Template (EmailTemplate(..))
 
 component :: forall r q o m.
@@ -33,20 +34,19 @@ component :: forall r q o m.
   ManageTemplate m =>
   ManageSettings m =>
   SendTestMail m =>
-  H.Component q { defaultEntry :: DefaultEntry | r } o m
+  H.Component q { defaultEntry :: Entry | r } o m
 component = do
   H.mkComponent
     { initialState: \{ defaultEntry } ->
       { count: 0
       , defaultEntry: defaultEntry
       , settings: NotAsked
-      , page: Settings
+      , page: Status
       , templatePage:
         { edit: false
         , template: NotAsked
         , templateEdited: EmailTemplate { subject: "", body: "" }
         }
-      , testMailAddr: ""
       }
     , render
     , eval: H.mkEval H.defaultEval { handleAction = handleAction, initialize = Just Initialize }
@@ -62,8 +62,7 @@ render state =
   HH.div
     [ HP.id "app" ]
     [ bulmaNavbar
-    , HH.div
-        [ HP.classes [ HH.ClassName "page" ] ]
+    , HH.div [ cls "page" ]
         [ renderPage state ]
     ]
 
@@ -73,9 +72,9 @@ renderPage :: forall m.
   SendTestMail m =>
   State -> H.ComponentHTML Action Slots m
 renderPage state = case state.page of
+  Status -> StatusPage.render state
   Template -> TemplatePage.render state.templatePage state.defaultEntry
   Settings -> SettingsPage.render state
-  _ -> unsafeThrow "Unimplemented!"
 
 oldNavbar :: forall m. H.ComponentHTML Action Slots m
 oldNavbar =
@@ -94,34 +93,31 @@ oldNavbar =
 
 bulmaNavbar :: forall m. H.ComponentHTML Action Slots m
 bulmaNavbar =
-  HH.nav [ class_ "navbar", HPA.role "navigation", HPA.label "main navigation" ]
-    [ HH.div [ class_ "navbar-brand" ]
-        [ HH.div [ class_ "navbar-item" ]
+  HH.nav [ cls "navbar", HPA.role "navigation", HPA.label "main navigation" ]
+    [ HH.div [ cls "navbar-brand" ]
+        [ HH.a [ cls "navbar-item", HE.onClick \_ -> ShowPage Status ]
             [ HH.text "KVM Mail"]
         , navbarBurger
         ]
-    , HH.div [ class_ "navbar-menu" ]
-        [ HH.div [ class_ "navbar-start" ]
+    , HH.div [ cls "navbar-menu" ]
+        [ HH.div [ cls "navbar-start" ]
             [ HH.a
-                [ class_ "navbar-item", HE.onClick \_ -> ShowPage Template ]
+                [ cls "navbar-item", HE.onClick \_ -> ShowPage Template ]
                 [ HH.text "Template"]
             , HH.a
-                [ class_ "navbar-item", HE.onClick \_ -> ShowPage Settings ]
+                [ cls "navbar-item", HE.onClick \_ -> ShowPage Settings ]
                 [ HH.text "Settings"]
             ]
         ]
     ]
   where
   navbarBurger =
-    HH.a [ class_ "navbar-burger", HPA.role "button", HPA.label "menu", HPA.expanded "false" ]
+    HH.a [ cls "navbar-burger", HPA.role "button", HPA.label "menu", HPA.expanded "false" ]
       [ HH.span [ HPA.hidden "true" ] []
       , HH.span [ HPA.hidden "true" ] []
       , HH.span [ HPA.hidden "true" ] []
       ]
 
-
-class_ :: forall r t. String -> HH.IProp ( "class" :: String | r ) t
-class_ = HP.class_ <<< HH.ClassName
 
 
 -- Update --

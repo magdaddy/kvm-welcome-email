@@ -9,22 +9,23 @@ import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
 import WelcomeEmail.App.AppM (runAppM)
 import WelcomeEmail.App.Env (Env)
+import WelcomeEmail.Shared.Boundary (defaultSettings)
 
 main :: Effect Unit
 main = HA.runHalogenAff do
   body <- HA.awaitBody
 
   let
-    defaultEntry =
-      { id: "4c20979fe0754e74875afa4308d73ce7"
-      , title: "Slowtec GmbH"
-      , created: 1234.0
-      , version: 33
-      }
+    -- defaultEntry =
+    --   { id: "4c20979fe0754e74875afa4308d73ce7"
+    --   , title: "Slowtec GmbH"
+    --   , created: 1234.0
+    --   , version: 33
+    --   }
 
     environment :: Env
-    environment = { defaultEntry }
+    environment = {}
 
     rootComponent = H.hoist (runAppM environment) Home.component
 
-  runUI rootComponent { defaultEntry } body
+  runUI rootComponent { defaultEntry: defaultSettings.defaultEntry } body

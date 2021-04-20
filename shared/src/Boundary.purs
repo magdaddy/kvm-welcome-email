@@ -1,6 +1,6 @@
 module WelcomeEmail.Shared.Boundary where
 
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import WelcomeEmail.Shared.Entry (Entry)
 
 type Email =
@@ -23,6 +23,7 @@ type NodeMailerConfig =
 type Settings
   = { nodeMailer :: NodeMailerConfig
     , defaultEntry :: Entry
+    , senderAddress :: String
     }
 
 defaultSettings :: Settings
@@ -41,7 +42,10 @@ defaultSettings =
       , title: "Slowtec GmbH"
       , created: 1234.0
       , version: 33
+      , contact_name: Just "Slowtec"
+      , email: Just "post@slowtec.de"
       }
+  , senderAddress: ""
   }
 
 type TestMailPayload = { emailAddr :: String }
