@@ -105,16 +105,11 @@ in  upstream
 -------------------------------
 -}
 let upstream =
-    --   https://github.com/purescript/package-sets/releases/download/psc-0.14.0-20210308/packages.dhall sha256:5a86da7913f6c84adc2efacfad49ca135af8f62235e7270d9b952a8dda3c4b47
-      -- https://github.com/purescript/package-sets/releases/download/psc-0.14.0-20210402/packages.dhall sha256:0cfaa5de499bd629f5263daff3261144d9d348d38a451b7938a6f52054c3a086
       https://github.com/purescript/package-sets/releases/download/psc-0.14.0-20210409/packages.dhall sha256:e81c2f2ce790c0e0d79869d22f7a37d16caeb5bd81cfda71d46c58f6199fd33f
 
 in  upstream
   with express = ../../purs-fork/purescript-express/spago.dhall as Location
   with nodemailer = ../../purs-fork/purescript-nodemailer/spago.dhall as Location
-  with kvm-welcome-email-server = ./server/spago.dhall as Location
-  with kvm-welcome-email-app = ./app/spago.dhall as Location
-  with kvm-welcome-email-shared = ./shared/spago.dhall as Location
   with convertable-options =
     { dependencies =
         [ "console", "effect", "maybe", "record" ]

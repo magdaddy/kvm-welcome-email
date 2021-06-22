@@ -12,6 +12,7 @@
 /.parcel-cache
 dist/
 prod/*
+/dev/bulma-cfg.css
 
 .env
 /*.log

@@ -1,10 +1,23 @@
-{ sources = [ "src/**/*.purs", "test/**/*.purs" ]
-, name = "my-project"
+{ name = "kvm-welcome-email"
 , dependencies =
   [ "debug"
-  , "kvm-welcome-email-app"
-  , "kvm-welcome-email-server"
-  , "kvm-welcome-email-shared"
+  , "affjax"
+  , "argonaut"
+  , "console"
+  , "effect"
+  , "express"
+  , "formatters"
+  , "halogen"
+  , "halogen-formless"
+  , "js-timers"
+  , "node-fs"
+  , "nodemailer"
+  , "node-process"
+  , "now"
+  , "psci-support"
+  , "remotedata"
+  , "spec"
   ]
 , packages = ./packages.dhall
+, sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }
