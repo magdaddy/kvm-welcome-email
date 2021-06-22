@@ -19,11 +19,12 @@ import Halogen.HTML.Properties as HP
 import Halogen.HTML.Properties.ARIA as HPA
 import Network.RemoteData (RemoteData(..), _Success, fromEither)
 import Type.Proxy (Proxy(..))
-import WelcomeEmail.App.Caps (class ManageSettings, class ManageTemplate, class SendTestMail, getSettings, getTemplate, saveTemplate, sendTestMail)
+import WelcomeEmail.App.Caps (class ManageSettings, class ManageStatus, class ManageTemplate, class SendTestMail, getSettings, getTemplate, saveTemplate, serverState, toggleRunning)
 import WelcomeEmail.App.Data (Action(..), Page(..), Slots, State)
-import WelcomeEmail.App.StatusPage as StatusPage
 import WelcomeEmail.App.SettingsPage as SettingsPage
+import WelcomeEmail.App.StatusPage as StatusPage
 import WelcomeEmail.App.TemplatePage as TemplatePage
+import WelcomeEmail.App.LoginPage as LoginPage
 import WelcomeEmail.App.Util (cls)
 import WelcomeEmail.Shared.Entry (Entry)
 import WelcomeEmail.Shared.Template (EmailTemplate(..))
@@ -31,6 +32,7 @@ import WelcomeEmail.Shared.Template (EmailTemplate(..))
 component :: forall r q o m.
   MonadEffect m =>
   MonadAff m =>
+  ManageStatus m =>
   ManageTemplate m =>
   ManageSettings m =>
   SendTestMail m =>
@@ -38,10 +40,10 @@ component :: forall r q o m.
 component = do
   H.mkComponent
     { initialState: \{ defaultEntry } ->
-      { count: 0
+      { isRunning: NotAsked
       , defaultEntry: defaultEntry
       , settings: NotAsked
-      , page: Status
+      , page: Login
       , templatePage:
         { edit: false
         , template: NotAsked
@@ -75,6 +77,7 @@ renderPage state = case state.page of
   Status -> StatusPage.render state
   Template -> TemplatePage.render state.templatePage state.defaultEntry
   Settings -> SettingsPage.render state
+  Login -> LoginPage.render state
 
 oldNavbar :: forall m. H.ComponentHTML Action Slots m
 oldNavbar =
@@ -122,15 +125,31 @@ bulmaNavbar =
 
 -- Update --
 handleAction :: forall cs o m. MonadEffect m =>
+  ManageStatus m =>
   ManageTemplate m =>
   ManageSettings m =>
   SendTestMail m =>
   Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
   Initialize -> do
+    handleAction GetServerState
     handleAction GetTemplate
     handleAction GetSettings
   ShowPage page -> H.modify_ _ { page = page }
+
+  ToggleRunning -> do
+    H.modify_ _ { isRunning = Loading }
+    response <- toggleRunning
+    -- H.modify_ _ { isRunning = fromEither response }
+    case response of
+      Left err -> H.modify_ _ { isRunning = (Failure err) }
+      Right { isRunning } -> H.modify_ _ { isRunning = (Success isRunning) }
+  GetServerState -> do
+    H.modify_ _ { isRunning = Loading }
+    response <- serverState
+    case response of
+      Left err -> H.modify_ _ { isRunning = (Failure err) }
+      Right { isRunning } -> H.modify_ _ { isRunning = (Success isRunning) }
 
   GetTemplate -> do
     H.modify_ \st -> set (_templatePage <<< __template) Loading st
@@ -168,11 +187,11 @@ handleAction = case _ of
     response <- getSettings
     H.modify_ \st -> set (_settings) (fromEither response) st
 
-  SendTestMailClicked -> do
-    result <- sendTestMail { emailAddr: "" }
-    case result of
-      Left err -> liftEffect $ log $ show err
-      Right _ -> pure unit
+  -- SendTestMailClicked -> do
+  --   result <- sendTestMail { emailAddr: "" }
+  --   case result of
+  --     Left err -> liftEffect $ log $ show err
+  --     Right _ -> pure unit
 
 _templatePage :: forall a r. Lens' { templatePage :: a | r } a
 _templatePage = prop (Proxy :: _ "templatePage")

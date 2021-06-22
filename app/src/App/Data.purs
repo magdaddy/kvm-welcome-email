@@ -19,6 +19,7 @@ type OpaqueSlot id = forall query. H.Slot query Void id
 type Slots =
   ( rawHtml :: OpaqueSlot Int
   , settingsForm :: OpaqueSlot Int
+  , loginForm :: OpaqueSlot Int
   , testMail :: OpaqueSlot Int
   )
 
@@ -26,13 +27,14 @@ data Page
   = Status
   | Template
   | Settings
+  | Login
 
 derive instance genericPage :: Generic Page _
 instance showPage :: Show Page where
   show = genericShow
 
 type State =
-  { count :: Int
+  { isRunning :: RemoteData AppError Boolean
   , defaultEntry :: Entry
   , settings :: RemoteData AppError Settings
   , page :: Page
@@ -51,6 +53,9 @@ data Action
   = Initialize
   | ShowPage Page
 
+  | ToggleRunning
+  | GetServerState
+
   | GetTemplate
   | EditTemplateClicked
   | SaveTemplateClicked
@@ -59,8 +64,6 @@ data Action
   | TemplateBodyEdited String
 
   | GetSettings
-
-  | SendTestMailClicked
 
 
 data AppError
@@ -76,8 +79,3 @@ instance showAppError :: Show AppError where
     JsError err -> "JsError: " <> Exn.message err
     OtherError err -> "OtherError: " <> err
 
-
--- newtype SState = SState State
--- derive instance genericSState :: Generic SState _
--- derive newtype instance showSState :: Show SState
---   -- show = genericShow

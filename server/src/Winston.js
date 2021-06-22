@@ -28,4 +28,15 @@ if (process.env.NODE_ENV !== 'production') {
   }));
 }
 
-exports.log = info => () => logger.log(info)
+//using the logger and its configured transports, to save the logs created by Morgan
+const morgan = require('morgan');
+
+const myStream = {
+  write: (text) => {
+      logger.http(text)
+  }
+}
+
+exports.morgan = morgan('dev', { stream: myStream });
+
+exports.log = info => () => logger.log(info);

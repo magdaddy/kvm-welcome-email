@@ -2,6 +2,7 @@ module WelcomeEmail.Shared.Template where
 
 import Prelude
 
+import Data.Argonaut (class EncodeJson)
 import Data.Array (foldl)
 import Data.Newtype (class Newtype)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
@@ -15,6 +16,7 @@ derive instance newtypeEmailTemplate :: Newtype EmailTemplate _
 derive newtype instance showEmailTemplate :: Show EmailTemplate
 derive newtype instance readForeignEmailTemplate :: ReadForeign EmailTemplate
 derive newtype instance writeForeignEmailTemplate :: WriteForeign EmailTemplate
+derive newtype instance encodeJsonEmailTemplate :: EncodeJson EmailTemplate
 
 expand :: Entry -> EmailTemplate -> Email
 expand entry (EmailTemplate t) = { subject: applyPatts t.subject, body: applyPatts t.body }

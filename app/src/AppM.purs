@@ -3,11 +3,12 @@ module WelcomeEmail.App.AppM where
 import Prelude
 
 import Affjax as AX
-import Affjax.RequestBody (string)
+import Affjax.RequestBody (json)
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Control.Monad.Reader.Trans (class MonadAsk, ReaderT, asks, runReaderT)
 import Control.Parallel (class Parallel, parallel, sequential)
+import Data.Argonaut (encodeJson)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -15,9 +16,9 @@ import Effect.Aff (Aff, ParAff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
-import Simple.JSON (readJSON, writeJSON)
+import Simple.JSON (readJSON)
 import Type.Equality (class TypeEquals, from)
-import WelcomeEmail.App.Caps (class ManageSettings, class ManageTemplate, class SendTestMail)
+import WelcomeEmail.App.Caps (class ManageSettings, class ManageStatus, class ManageTemplate, class SendTestMail)
 import WelcomeEmail.App.Data (AppError(..))
 import WelcomeEmail.App.Env (Env)
 
@@ -49,6 +50,29 @@ instance parallelAppM :: Parallel ParAppM AppM where
   sequential (ParAppM readerT) = AppM (sequential readerT)
 
 
+instance manageStatusAppM :: ManageStatus AppM where
+  toggleRunning = do
+    log url # liftEffect
+    result <- liftAff $ AX.post ResponseFormat.string url Nothing
+    case result of
+      Left err -> pure $ Left $ HttpError err
+      Right response -> case response.status of
+        StatusCode 200 -> pure $ lmap JsonError $ readJSON response.body
+        _ -> pure $ Left $ OtherError "server responded not-ok"
+    where
+    url = "http://localhost:4000/togglerunning"
+  serverState = do
+    log url # liftEffect
+    result <- liftAff $ AX.get ResponseFormat.string url
+    case result of
+      Left err -> pure $ Left $ HttpError err
+      Right response -> case response.status of
+        StatusCode 200 -> pure $ lmap JsonError $ readJSON response.body
+        _ -> pure $ Left $ OtherError "server responded not-ok"
+    where
+    url = "http://localhost:4000/serverstate"
+
+
 instance manageTemplateAppM :: ManageTemplate AppM where
   getTemplate = do
     log url # liftEffect
@@ -65,7 +89,7 @@ instance manageTemplateAppM :: ManageTemplate AppM where
     log url # liftEffect
     -- let reqBody = string (joinWith "\n" template)
     -- let reqBody = string (template.subject <> "\n" <> template.body)
-    let reqBody = string $ writeJSON template
+    let reqBody = json $ encodeJson template
     result <- liftAff $ AX.post ResponseFormat.string url (Just reqBody)
     pure $ Right unit
     where
@@ -85,7 +109,7 @@ instance manageSettingsAppM :: ManageSettings AppM where
     url = "http://localhost:4000/settings"
   saveSettings settings = do
     log url # liftEffect
-    let reqBody = string $ writeJSON settings
+    let reqBody = json $ encodeJson settings
     result <- liftAff $ AX.post ResponseFormat.json url (Just reqBody)
     pure $ Right unit
     where
@@ -95,7 +119,7 @@ instance manageSettingsAppM :: ManageSettings AppM where
 instance sendTestMailAppM :: SendTestMail AppM where
   sendTestMail pl = do
     log url # liftEffect
-    let reqBody = string $ writeJSON pl
+    let reqBody = json $ encodeJson pl
     result <- liftAff $ AX.post ResponseFormat.string url (Just reqBody)
     case result of
       Left err -> pure $ Left $ HttpError err

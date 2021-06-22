@@ -8,6 +8,17 @@ import WelcomeEmail.App.Data (AppError)
 import WelcomeEmail.Shared.Boundary (Settings, TestMailPayload, TestMailResponse)
 import WelcomeEmail.Shared.Template (EmailTemplate)
 
+class Monad m <= ManageStatus m where
+  toggleRunning :: m (Either AppError { isRunning :: Boolean })
+  serverState :: m (Either AppError { isRunning :: Boolean })
+  -- login :: LoginData -> m (Either AppError { token :: String })
+
+instance manageStatusHalogenM :: ManageStatus m => ManageStatus (HalogenM st act slots msg m) where
+  toggleRunning = lift toggleRunning
+  serverState = lift serverState
+  -- login = lift <<< login
+
+
 class Monad m <= ManageTemplate m where
   getTemplate :: m (Either AppError EmailTemplate)
   saveTemplate :: EmailTemplate -> m (Either AppError Unit)
@@ -24,6 +35,7 @@ class Monad m <= ManageSettings m where
 instance manageSettingsHalogenM :: ManageSettings m => ManageSettings (HalogenM st act slots msg m) where
   getSettings = lift getSettings
   saveSettings = lift <<< saveSettings
+
 
 class Monad m <= SendTestMail m where
   sendTestMail :: TestMailPayload -> m (Either AppError TestMailResponse)
