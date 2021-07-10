@@ -4,8 +4,8 @@
   "private": true,
   "author": "Magnus Herold",
   "scripts": {
-    "serve": "parcel app/dev/index.html",
-    "css-build": "node-sass --omit-source-map-url app/dev/bulma-cfg.scss app/dev/bulma-cfg.css",
+    "serve": "parcel dev/index.html",
+    "css-build": "node-sass --omit-source-map-url dev/bulma-cfg.scss dev/bulma-cfg.css",
     "css-watch": "npm run css-build -- --watch"
   },
   "dependencies": {
