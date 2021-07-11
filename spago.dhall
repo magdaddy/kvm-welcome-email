@@ -15,6 +15,7 @@
   , "express"
   , "foldable-traversable"
   , "foreign"
+  , "foreign-object"
   , "formatters"
   , "halogen"
   , "halogen-formless"
@@ -34,6 +35,9 @@
   , "prelude"
   , "profunctor-lenses"
   , "psci-support"
+  , "react-basic"
+  , "react-basic-dom"
+  , "react-basic-hooks"
   , "record"
   , "refs"
   , "remotedata"
@@ -44,6 +48,7 @@
   , "tuples"
   , "type-equality"
   , "typelevel-prelude"
+  , "web-dom"
   , "web-html"
   ]
 , packages = ./packages.dhall

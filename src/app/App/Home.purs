@@ -21,10 +21,6 @@ import Network.RemoteData (RemoteData(..), _Success, fromEither)
 import Type.Proxy (Proxy(..))
 import WelcomeEmail.App.Caps (class ManageSettings, class ManageStatus, class ManageTemplate, class SendTestMail, getSettings, getTemplate, saveTemplate, serverState, toggleRunning)
 import WelcomeEmail.App.Data (Action(..), Page(..), Slots, State)
-import WelcomeEmail.App.SettingsPage as SettingsPage
-import WelcomeEmail.App.StatusPage as StatusPage
-import WelcomeEmail.App.TemplatePage as TemplatePage
-import WelcomeEmail.App.LoginPage as LoginPage
 import WelcomeEmail.App.Util (cls)
 import WelcomeEmail.Shared.Entry (Entry)
 import WelcomeEmail.Shared.Template (EmailTemplate(..))
@@ -60,24 +56,25 @@ render :: forall m.
   ManageSettings m =>
   SendTestMail m =>
   State -> H.ComponentHTML Action Slots m
-render state =
+render _state =
   HH.div
     [ HP.id "app" ]
     [ bulmaNavbar
     , HH.div [ cls "page" ]
-        [ renderPage state ]
+        [ --renderPage state
+        ]
     ]
 
-renderPage :: forall m.
-  MonadAff m =>
-  ManageSettings m =>
-  SendTestMail m =>
-  State -> H.ComponentHTML Action Slots m
-renderPage state = case state.page of
-  Status -> StatusPage.render state
-  Template -> TemplatePage.render state.templatePage state.defaultEntry
-  Settings -> SettingsPage.render state
-  Login -> LoginPage.render state
+-- renderPage :: forall m.
+--   MonadAff m =>
+--   ManageSettings m =>
+--   SendTestMail m =>
+--   State -> H.ComponentHTML Action Slots m
+-- renderPage state = case state.page of
+--   Status -> StatusPage.render state
+--   Template -> TemplatePage.render state.templatePage state.defaultEntry
+--   Settings -> SettingsPage.render state
+--   Login -> LoginPage.render state
 
 oldNavbar :: forall m. H.ComponentHTML Action Slots m
 oldNavbar =

@@ -4,9 +4,13 @@ import Prelude
 
 import Data.Argonaut (class EncodeJson)
 import Data.Array (foldl)
+import Data.Lens (Lens')
+import Data.Lens.Iso.Newtype (_Newtype)
+import Data.Lens.Record (prop)
 import Data.Newtype (class Newtype)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Simple.JSON (class ReadForeign, class WriteForeign)
+import Type.Prelude (Proxy(..))
 import WelcomeEmail.Shared.Boundary (Email)
 import WelcomeEmail.Shared.Entry (Entry, formatCreatedEmail)
 
@@ -17,6 +21,12 @@ derive newtype instance showEmailTemplate :: Show EmailTemplate
 derive newtype instance readForeignEmailTemplate :: ReadForeign EmailTemplate
 derive newtype instance writeForeignEmailTemplate :: WriteForeign EmailTemplate
 derive newtype instance encodeJsonEmailTemplate :: EncodeJson EmailTemplate
+
+_EmailTemplateSubject :: Lens' EmailTemplate String
+_EmailTemplateSubject = _Newtype <<< prop (Proxy :: _ "subject")
+
+_EmailTemplateBody :: Lens' EmailTemplate String
+_EmailTemplateBody = _Newtype <<< prop (Proxy :: _ "body")
 
 expand :: Entry -> EmailTemplate -> Email
 expand entry (EmailTemplate t) = { subject: applyPatts t.subject, body: applyPatts t.body }
