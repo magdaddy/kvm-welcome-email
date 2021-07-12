@@ -18,16 +18,16 @@ import React.Basic.Hooks (Component, component, useEffectOnce, useState, useStat
 import React.Basic.Hooks as React
 import WelcomeEmail.App.Api as Api
 import WelcomeEmail.App.Data (AppError)
-import WelcomeEmail.App.TestMail as TestMail
+import WelcomeEmail.App.TestMail (mkTestMailComponent)
 import WelcomeEmail.Shared.Entry (Entry)
 import WelcomeEmail.Shared.Marked (markedS)
 import WelcomeEmail.Shared.Template (EmailTemplate, _EmailTemplateBody, _EmailTemplateSubject, expand)
 
--- type State = TemplatePageState
 
 mkTemplatePage :: Component { defaultEntry :: Entry }
 mkTemplatePage = do
   templateEditor <- mkTemplateEditor
+  testMailComponent <- mkTestMailComponent
   component "TemplatePage" \props -> React.do
     (edit :: Boolean) /\ setEdit <- useState' false
     (template :: RemoteData AppError EmailTemplate) /\ setTemplate <- useState' NotAsked
@@ -73,7 +73,7 @@ mkTemplatePage = do
               , dangerouslySetInnerHTML: { __html: markedS email.body }
               }
           , R.hr {}
-
+          , testMailComponent {}
           ]
 
     useEffectOnce do

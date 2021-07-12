@@ -9,6 +9,7 @@ import React.Basic.DOM as R
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState')
 import React.Basic.Hooks as React
+import WelcomeEmail.App.SettingsPage (mkSettingsPage)
 import WelcomeEmail.App.StatusPage (mkStatusPage)
 import WelcomeEmail.App.TemplatePage (mkTemplatePage)
 import WelcomeEmail.Shared.Boundary (defaultSettings)
@@ -16,17 +17,18 @@ import WelcomeEmail.Shared.Boundary (defaultSettings)
 data Page
   = StatusPage
   | TemplatePage
-  -- | Settings
+  | SettingsPage
   -- | Login
 derive instance eqPage :: Eq Page
 
-gPage = TemplatePage :: Page
+gPage = SettingsPage :: Page
 
 mkApp :: Component Unit
 mkApp = do
   bulmaNavbar <- mkBulmaNavbar
-  templatePage <- mkTemplatePage
   statusPage <- mkStatusPage
+  templatePage <- mkTemplatePage
+  settingsPage <- mkSettingsPage
   component "App" \_ -> React.do
     (page :: Page) /\ setPage <- useState' gPage
     useEffectOnce do
@@ -39,6 +41,7 @@ mkApp = do
           , case page of
               StatusPage -> statusPage {}
               TemplatePage -> templatePage { defaultEntry: defaultSettings.defaultEntry }
+              SettingsPage -> settingsPage {}
           ]
         }
 
@@ -90,7 +93,7 @@ mkBulmaNavbar = do
                       , R.a
                           { className: "navbar-item"
                           , children: [ R.text "Settings" ]
-                          , onClick: handler_ $ props.setPage StatusPage
+                          , onClick: handler_ $ props.setPage SettingsPage
                           }
                       ]
                     }

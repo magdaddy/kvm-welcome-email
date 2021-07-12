@@ -15,6 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Simple.JSON (readJSON)
 import WelcomeEmail.App.Data (AppError(..))
+import WelcomeEmail.Shared.Boundary (Settings, TestMailPayload, TestMailResponse)
 import WelcomeEmail.Shared.Template (EmailTemplate)
 
 
@@ -66,3 +67,37 @@ saveTemplate template = do
   pure $ Right unit
   where
   url = "http://localhost:4000/template"
+
+
+getSettings :: Aff (Either AppError Settings)
+getSettings = do
+  liftEffect $ log url
+  result <- AX.get ResponseFormat.string url
+  case result of
+    Left err -> pure $ Left $ HttpError err
+    Right response -> case response.status of
+      StatusCode 200 -> pure $ lmap JsonError $ readJSON response.body
+      _ -> pure $ Left $ OtherError "server responded not-ok"
+  where
+  url = "http://localhost:4000/settings"
+
+saveSettings :: Settings -> Aff (Either AppError Unit)
+saveSettings settings = do
+  liftEffect $ log url
+  let reqBody = json $ encodeJson settings
+  _ <- AX.post ResponseFormat.json url (Just reqBody)
+  pure $ Right unit
+  where
+  url = "http://localhost:4000/settings"
+
+
+sendTestMail :: TestMailPayload -> Aff (Either AppError TestMailResponse)
+sendTestMail pl = do
+  liftEffect $ log url
+  let reqBody = json $ encodeJson pl
+  result <- AX.post ResponseFormat.string url (Just reqBody)
+  case result of
+    Left err -> pure $ Left $ HttpError err
+    Right response -> pure $ lmap JsonError $ readJSON response.body
+  where
+  url = "http://localhost:4000/sendtestmail"
