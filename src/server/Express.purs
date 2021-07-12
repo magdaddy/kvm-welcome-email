@@ -2,22 +2,22 @@ module WelcomeEmail.Server.Express where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT, except, lift, runExceptT, throwError)
+import Control.Monad.Except (ExceptT, except, lift, runExceptT)
 import Data.Array (find)
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), note)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (error, forkAff, killFiber)
-import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Aff.Class (liftAff)
+import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import Nmailer (sendTestMail)
 import Node.Express.App (App, get, listenHttp, post, use, useExternal)
 import Node.Express.Handler (Handler, HandlerM)
 import Node.Express.Middleware.Static (static)
-import Node.Express.Request (getBody', hasType)
+import Node.Express.Request (getBody')
 import Node.Express.Response (send, setStatus)
 import Node.Express.Types (Middleware)
 import Simple.JSON (class ReadForeign, read, writeJSON)
@@ -52,54 +52,20 @@ server stateRef = do
     withErrorHandler defErrHandler do
       loginData :: LoginData <- parseJsonReqBody
       result <- liftEffect $ getUsers
-      users <- EHandlerM $ except $ lmap (\err -> OtherError $ "Something's wrong with the users... this should never happen." <> err) result
+      users <- except $ lmap (\err -> OtherError $ "Something's wrong with the users... this should never happen." <> err) result
       case find (\u -> u.name == loginData.username && u.pwd == loginData.password) users of
-        Nothing -> liftHM $ sendError "Login failed, wrong credentials."
+        Nothing -> lift $ send { error: "Login failed, wrong credentials." }
         Just _ -> do
-          let jwt = jwtSign {} tokenSecret { subject: loginData.username, expiresIn: "1h" }
-          liftHM $ send $ writeJSON { token: jwt }
-
-
-  -- post "/login" do
-  --   parseRes <- parseReqBody
-  --   case parseRes of
-  --     Left err -> do
-  --       liftEffect $ log $ show err
-  --       sendError $ show err
-  --     Right (loginData :: LoginData) -> do
-  --       result <- liftEffect $ getUsers
-  --       case result of
-  --         Left err -> do
-  --           let msg = "Something's wrong with the users... this should never happen." <> err
-  --           liftEffect $ logL Error msg
-  --           sendError msg
-  --         Right users -> case find (\u -> u.name == loginData.username && u.pwd == loginData.password) users of
-  --           Nothing -> sendError "Login failed, wrong credentials."
-  --           Just _ -> do
-  --             let jwt = jwtSign {} tokenSecret { subject: loginData.username, expiresIn: "1h" }
-  --             send $ writeJSON { token: jwt }
+          let jwt = jwtSign {} tokenSecret { subject: loginData.username, expiresIn: "1w" }
+          lift $ send { token: jwt }
 
   post "/sendtestmail" do
     withErrorHandler defErrHandler do
       pl :: TestMailPayload <- parseJsonReqBody
       liftEffect $ log $ show pl
-      EHandlerM $ (liftAff $ sendTestMail pl.emailAddr) >>= except
-      liftHM $ send unit
-
-  -- post "/sendtestmail" do
-  --   bodF <- getBody'
-  --   bod <- runExceptT $ readString bodF
-  --   liftEffect $ log $ show bod
-  --   case bod of
-  --     Left err -> send { error: show err }
-  --     Right body -> case readJSON body of
-  --       Left err -> send { error: show err }
-  --       Right (pl :: TestMailPayload) -> do
-  --         liftEffect $ log $ show pl
-  --         result <- liftAff $ sendTestMail pl.emailAddr
-  --         case result of
-  --           Left err -> send { error: show err }
-  --           Right _ -> send unit
+      result <- liftAff $ sendTestMail pl.emailAddr
+      except result
+      lift $ send unit
 
   get "/settings" do
     settings <- liftEffect loadSettings
@@ -109,7 +75,7 @@ server stateRef = do
     withErrorHandler defErrHandler do
       settings :: Settings <- parseJsonReqBody
       liftEffect $ saveSettings settings
-      liftHM $ send unit
+      lift $ send unit
 
   get "/template" do
     email <- liftEffect loadTemplate
@@ -119,13 +85,13 @@ server stateRef = do
     withErrorHandler defErrHandler do
       templ :: EmailTemplate <- parseJsonReqBody
       liftEffect $ saveTemplate templ
-      liftHM $ send unit
+      lift $ send unit
 
   get "/serverstate" do
     state <- liftEffect $ Ref.read stateRef
     case state.running of
       Nothing -> send $ writeJSON { isRunning: false }
-      Just fiber -> send $ writeJSON { isRunning: true }
+      Just _fiber -> send $ writeJSON { isRunning: true }
 
   post "/togglerunning" do
     state <- liftEffect $ Ref.read stateRef
@@ -143,12 +109,12 @@ server stateRef = do
 
   use $ static "./public"
 
+
 defErrHandler :: AppError -> Handler
 defErrHandler err = do
   liftEffect $ log $ show err
   setStatus 400
   send { error: show err }
-
 
 runServer :: Ref State -> Effect Unit
 runServer stateRef = do
@@ -160,35 +126,13 @@ runServer stateRef = do
 sendError :: String -> Handler
 sendError err = send (writeJSON { error: err })
 
-
-newtype EHandlerM e a = EHandlerM (ExceptT e HandlerM a)
-
-derive newtype instance functorEHandlerM :: Functor (EHandlerM e)
-derive newtype instance applyEHandlerM :: Apply (EHandlerM e)
-derive newtype instance applicativeEHandlerM :: Applicative (EHandlerM e)
-derive newtype instance bindEHandlerM :: Bind (EHandlerM e)
-derive newtype instance monadEHandlerM :: Monad (EHandlerM e)
-derive newtype instance monadEffectEHandlerM :: MonadEffect (EHandlerM e)
-derive newtype instance monadAffEHandlerM :: MonadAff (EHandlerM e)
-
-liftHM :: forall e a. HandlerM a -> EHandlerM e a
-liftHM = EHandlerM <<< lift
-
-liftMaybeHM :: forall e a. HandlerM (Maybe a) -> e -> EHandlerM e a
-liftMaybeHM h err = EHandlerM do
-  mbVal <- lift h
-  except $ note err mbVal
-
-parseJsonReqBody :: forall a. ReadForeign a => EHandlerM AppError a
-parseJsonReqBody = EHandlerM do
-  isContentTypeJson <- lift $ hasType "application/json"
-  when (not isContentTypeJson) $ throwError $ OtherError "Content type of request is not application/json."
+parseJsonReqBody :: forall a. ReadForeign a => ExceptT AppError HandlerM a
+parseJsonReqBody = do
   fbody <- lift getBody'
-  -- traceM fbody
   except $ lmap JsonError $ read fbody
 
-withErrorHandler :: forall e. (e -> Handler) -> EHandlerM e Unit -> Handler
-withErrorHandler errorHandler (EHandlerM handler) = do
+withErrorHandler :: forall e. (e -> Handler) -> ExceptT e HandlerM Unit -> Handler
+withErrorHandler errorHandler handler = do
   result <- runExceptT handler
   case result of
     Left err -> errorHandler err

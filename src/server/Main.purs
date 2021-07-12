@@ -20,7 +20,7 @@ main = do
     error "NODE_ENV is not set to 'production' or 'development'."
     error "Please set it in .env or on the command line."
     exit 1
-  users <- getUsers >>= unwrapOrExit "Users could not be loaded"
+  _users <- getUsers >>= unwrapOrExit "Users could not be loaded"
   -- _ <- getUsers'
   savedState <- loadState >>= unwrapOrExit "Saved state could not be loaded"
   stateRef <- Ref.new { running: Nothing, saved: savedState }

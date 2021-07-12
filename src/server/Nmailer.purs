@@ -60,5 +60,5 @@ sendTestMail toAddr = do
   templ <- liftEffect loadTemplate
   let email = expand settings.defaultEntry templ
   let msg = mkMessage settings.senderAddress toAddr email
-  nodeEnv <- liftEffect getNodeEnv
+  _nodeEnv <- liftEffect getNodeEnv
   send settings.nodeMailer msg
