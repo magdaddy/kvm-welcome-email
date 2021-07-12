@@ -69,7 +69,7 @@ mkTemplatePage = do
               }
           , R.hr {}
           , R.div
-              { className: "m-2"
+              { className: "m-2 content"
               , dangerouslySetInnerHTML: { __html: markedS email.body }
               }
           , R.hr {}
