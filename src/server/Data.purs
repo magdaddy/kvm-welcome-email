@@ -12,6 +12,7 @@ data AppError
   | JsonError MultipleErrors
   | JsError Exn.Error
   | NodeMailerError Exn.Error
+  | Unauthorized String
   | OtherError String
 
 instance showAppError :: Show AppError where
@@ -20,4 +21,5 @@ instance showAppError :: Show AppError where
     JsonError err -> "JsonError: " <> show err
     JsError err -> "JsError: " <> Exn.message err
     NodeMailerError err -> "NodeMailerError: " <> Exn.message err
+    Unauthorized err -> "Unauthorized: " <> err
     OtherError err -> "OtherError: " <> err

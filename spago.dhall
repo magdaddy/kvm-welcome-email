@@ -6,7 +6,6 @@
   , "arrays"
   , "bifunctors"
   , "console"
-  , "const"
   , "datetime"
   , "debug"
   , "effect"
@@ -17,8 +16,6 @@
   , "foreign"
   , "foreign-object"
   , "formatters"
-  , "halogen"
-  , "halogen-formless"
   , "http-methods"
   , "integers"
   , "math"
@@ -48,6 +45,7 @@
   , "typelevel-prelude"
   , "web-dom"
   , "web-html"
+  , "web-storage"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

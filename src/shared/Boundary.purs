@@ -55,3 +55,7 @@ type TestMailResponse = { error :: Maybe String }
 type LoginData = { username :: String , password :: String }
 
 type ServerErrorResponse = { error :: Maybe String }
+
+type ErrorResponse = { error :: String }
+
+type TokenResponse = { token :: String }

@@ -9,19 +9,16 @@ import React.Basic.DOM as R
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState')
 import React.Basic.Hooks as React
+import WelcomeEmail.App.Api.Web (removeTokenFromLocalStorage)
+import WelcomeEmail.App.Data (Page(..))
+import WelcomeEmail.App.LoginPage (mkLoginPage)
 import WelcomeEmail.App.SettingsPage (mkSettingsPage)
 import WelcomeEmail.App.StatusPage (mkStatusPage)
 import WelcomeEmail.App.TemplatePage (mkTemplatePage)
 import WelcomeEmail.Shared.Boundary (defaultSettings)
 
-data Page
-  = StatusPage
-  | TemplatePage
-  | SettingsPage
-  -- | Login
-derive instance eqPage :: Eq Page
 
-gPage = SettingsPage :: Page
+gPage = LoginPage :: Page
 
 mkApp :: Component Unit
 mkApp = do
@@ -29,6 +26,7 @@ mkApp = do
   statusPage <- mkStatusPage
   templatePage <- mkTemplatePage
   settingsPage <- mkSettingsPage
+  loginPage <- mkLoginPage
   component "App" \_ -> React.do
     (page :: Page) /\ setPage <- useState' gPage
     useEffectOnce do
@@ -39,9 +37,10 @@ mkApp = do
         , children:
           [ bulmaNavbar { setPage }
           , case page of
-              StatusPage -> statusPage {}
-              TemplatePage -> templatePage { defaultEntry: defaultSettings.defaultEntry }
-              SettingsPage -> settingsPage {}
+              StatusPage -> statusPage { setPage }
+              TemplatePage -> templatePage { setPage, defaultEntry: defaultSettings.defaultEntry }
+              SettingsPage -> settingsPage { setPage }
+              LoginPage -> loginPage { setPage }
           ]
         }
 
@@ -94,6 +93,13 @@ mkBulmaNavbar = do
                           { className: "navbar-item"
                           , children: [ R.text "Settings" ]
                           , onClick: handler_ $ props.setPage SettingsPage
+                          }
+                      , R.a
+                          { className: "navbar-item"
+                          , children: [ R.text "Logout" ]
+                          , onClick: handler_ do
+                              removeTokenFromLocalStorage
+                              props.setPage LoginPage
                           }
                       ]
                     }

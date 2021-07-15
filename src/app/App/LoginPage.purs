@@ -2,24 +2,94 @@ module WelcomeEmail.App.LoginPage where
 
 import Prelude
 
-import Effect.Aff.Class (class MonadAff)
-import Halogen as H
-import Halogen.HTML as HH
-import Type.Proxy (Proxy(..))
-import WelcomeEmail.App.Data (Action, Slots, State)
-import WelcomeEmail.App.Util (cls)
-import WelcomeEmail.App.LoginForm as LoginForm
+import Control.Monad.Except (runExceptT)
+import Data.Either (Either(..))
+import Data.Maybe (fromMaybe)
+import Data.Tuple.Nested ((/\))
+import Effect (Effect)
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
+import React.Basic.DOM as R
+import React.Basic.DOM.Events (targetValue)
+import React.Basic.Events (handler, handler_)
+import React.Basic.Hooks (Component, component, useState, useState')
+import React.Basic.Hooks as React
+import WelcomeEmail.App.Api.Backend (login)
+import WelcomeEmail.App.Api.Web (saveTokenToLocalStorage)
+import WelcomeEmail.App.Data (Page(..))
+import WelcomeEmail.Shared.Boundary (LoginData)
 
 
-render :: forall m.
-  MonadAff m =>
-  State -> H.ComponentHTML Action Slots m
-render state =
-  HH.div [ cls "login container is-max-desktop" ]
-    [ HH.div [ cls "box mt-5" ]
-        [ HH.text "Login"
-        , HH.slot_ (Proxy :: _ "loginForm") 0 LoginForm.component unit
-        ]
-    ]
+mkLoginPage :: Component { setPage :: Page -> Effect Unit }
+mkLoginPage = do
+  -- loginForm <- mkFormComponent
+  component "LoginPage" \props -> React.do
+    (loginData :: LoginData) /\ setLoginData <- useState { username: "", password: "" }
+    (errMsg :: String) /\ setErrMsg <- useState' ""
+
+    let
+      submit = launchAff_ do
+        response <- runExceptT $ login loginData
+        case response of
+          Left err -> liftEffect $ setErrMsg $ show err
+          Right token -> do
+            liftEffect $ saveTokenToLocalStorage token
+            liftEffect $ props.setPage StatusPage
+
+      field label input = R.div
+        { className: "field"
+        , children:
+          [ R.label { className: "label", children: [ R.text label ] }
+          , R.div { className: "control", children: [ input ] }
+          ]
+        }
+    pure $
+      R.div
+        { className: "page login container is-max-desktop"
+        , children:
+          [ R.div
+              { className: "box mt-5"
+              , children:
+                [ R.text "Login"
+                , R.div_
+                    [ field "Username: " $ R.input
+                        { className: "input"
+                        , value: loginData.username
+                        , onChange: handler targetValue \val -> do
+                            setLoginData _ { username = fromMaybe "" val }
+                            setErrMsg ""
+                        }
+                    , field "Password: " $ R.input
+                        { className: "input"
+                        , value: loginData.password
+                        , onChange: handler targetValue \val -> do
+                            setLoginData _ { password = fromMaybe "" val }
+                            setErrMsg ""
+                        }
+                    , R.button
+                        { className: "button is-primary"
+                        , children: [ R.text "Login" ]
+                        , onClick: handler_ submit
+                        }
+                    , R.text errMsg
+                    ]
+                ]
+              }
+          ]
+        }
+
+
+
+
+-- render :: forall m.
+--   MonadAff m =>
+--   State -> H.ComponentHTML Action Slots m
+-- render state =
+--   HH.div [ cls "login container is-max-desktop" ]
+--     [ HH.div [ cls "box mt-5" ]
+--         [ HH.text "Login"
+--         , HH.slot_ (Proxy :: _ "loginForm") 0 LoginForm.component unit
+--         ]
+--     ]
 
 

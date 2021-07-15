@@ -13,7 +13,7 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Hooks (Component, component, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api as Api
+import WelcomeEmail.App.Api.Backend as Api
 
 
 mkTestMailComponent :: Component {}

@@ -8,6 +8,8 @@ import Data.Either (Either(..))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
+import Effect.Exception (message, name, try)
+import Foreign (Foreign)
 import Node.Process (exit)
 import Simple.JSON (readJSON)
 
@@ -55,6 +57,10 @@ unwrapOrExit msg = case _ of
 --   Left err -> handler err
 --   Right result -> pure result
 
+jwtVerify :: String -> Effect (Either String Foreign)
+jwtVerify token = do
+  result <- try $ jwtVerifyImpl token
+  pure $ lmap (\e -> name e <> ": " <> message e) result
 
 foreign import getNodeEnvImpl :: Effect String
 foreign import getUsersImpl :: Effect String
@@ -63,3 +69,4 @@ foreign import dotenvConfig :: Effect Unit
 
 foreign import tokenSecret :: String
 foreign import jwtSign :: forall r1 r2. Record r1 -> String -> Record r2 -> String
+foreign import jwtVerifyImpl :: String -> Effect Foreign

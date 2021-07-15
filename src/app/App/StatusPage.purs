@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Bifunctor (rmap)
 import Data.Tuple.Nested ((/\))
+import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import Network.RemoteData (RemoteData(..), fromEither)
@@ -11,11 +12,11 @@ import React.Basic.DOM (css)
 import React.Basic.DOM as R
 import React.Basic.Hooks (Component, component, useEffectOnce, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api as Api
-import WelcomeEmail.App.Data (AppError)
+import WelcomeEmail.App.Api.Backend as Api
+import WelcomeEmail.App.Data (AppError, Page)
 
 
-mkStatusPage :: Component { }
+mkStatusPage :: Component { setPage :: Page -> Effect Unit }
 mkStatusPage = do
   component "StatusPage" \_props -> React.do
     (isRunning :: RemoteData AppError Boolean) /\ setIsRunning <- useState' NotAsked

@@ -2,6 +2,7 @@ module WelcomeEmail.App.SettingsForm where
 
 import Prelude
 
+import Control.Monad.Except (runExceptT)
 import Data.Either (Either(..))
 import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -17,17 +18,17 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api as Api
-import WelcomeEmail.App.Data (AppError)
+import WelcomeEmail.App.Api.Backend as Api
+import WelcomeEmail.App.Data (AppError(..), Page(..))
 import WelcomeEmail.App.TestMail (mkTestMailComponent)
 import WelcomeEmail.Shared.Boundary (Settings)
 
 
-mkSettingsForm :: Component {}
+mkSettingsForm :: Component { setPage :: Page -> Effect Unit }
 mkSettingsForm = do
   formComponent <- mkFormComponent
   testMailComponent <- mkTestMailComponent
-  component "SettingsForm" \_props -> React.do
+  component "SettingsForm" \props -> React.do
     (settings :: RemoteData AppError Settings) /\ setSettings <- useState' NotAsked
     (edit :: Boolean) /\ setEdit <- useState' false
 
@@ -44,8 +45,12 @@ mkSettingsForm = do
     useEffectOnce do
       launchAff_ do
         liftEffect $ setSettings Loading
-        result <- Api.getSettings
-        liftEffect $ setSettings $ fromEither result
+        result <- runExceptT Api.getSettings
+        case result of
+          Left (Unauthorized err) -> do
+            liftEffect $ log $ "Unauthorized: " <> err
+            liftEffect $ props.setPage LoginPage
+          _ -> liftEffect $ setSettings $ fromEither result
       pure mempty
 
     pure $
@@ -118,7 +123,7 @@ mkFormComponent = do
         case mbs of
           Nothing -> liftEffect $ log "Port is not a number"
           Just s -> do
-            result <- Api.saveSettings s
+            result <- runExceptT $ Api.saveSettings s
             case result of
               Left err -> liftEffect $ logShow err
               Right _ -> do

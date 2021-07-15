@@ -2,6 +2,7 @@ module WelcomeEmail.App.TemplatePage where
 
 import Prelude
 
+import Control.Monad.Except (runExceptT)
 import Data.Either (Either(..))
 import Data.Lens (set, view)
 import Data.Maybe (fromMaybe)
@@ -9,6 +10,7 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Effect.Exception (throw)
 import Network.RemoteData (RemoteData(..), fromEither)
 import React.Basic.DOM as R
@@ -16,15 +18,15 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api as Api
-import WelcomeEmail.App.Data (AppError)
+import WelcomeEmail.App.Api.Backend as Api
+import WelcomeEmail.App.Data (AppError(..), Page(..))
 import WelcomeEmail.App.TestMail (mkTestMailComponent)
 import WelcomeEmail.Shared.Entry (Entry)
 import WelcomeEmail.Shared.Marked (markedS)
 import WelcomeEmail.Shared.Template (EmailTemplate, _EmailTemplateBody, _EmailTemplateSubject, expand)
 
 
-mkTemplatePage :: Component { defaultEntry :: Entry }
+mkTemplatePage :: Component { setPage :: Page -> Effect Unit, defaultEntry :: Entry }
 mkTemplatePage = do
   templateEditor <- mkTemplateEditor
   testMailComponent <- mkTestMailComponent
@@ -40,7 +42,7 @@ mkTemplatePage = do
         setEdit false
 
       saveEditTemplateHandler tmpl = launchAff_ do
-        result <- Api.saveTemplate tmpl
+        result <- runExceptT $ Api.saveTemplate tmpl
         case result of
           Left err -> liftEffect $ throw $ show err
           Right _ -> do
@@ -79,8 +81,12 @@ mkTemplatePage = do
     useEffectOnce do
       launchAff_ do
         liftEffect $ setTemplate Loading
-        result <- Api.getTemplate
-        liftEffect $ setTemplate $ fromEither result
+        result <- runExceptT Api.getTemplate
+        case result of
+          Left (Unauthorized err) -> do
+            liftEffect $ log $ "Unauthorized: " <> err
+            liftEffect $ props.setPage LoginPage
+          _ -> liftEffect $ setTemplate $ fromEither result
       pure mempty
     pure $
       R.div

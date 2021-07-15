@@ -2,15 +2,17 @@ module WelcomeEmail.App.SettingsPage where
 
 import Prelude
 
+import Effect (Effect)
 import React.Basic.DOM as R
 import React.Basic.Hooks (Component, component)
+import WelcomeEmail.App.Data (Page)
 import WelcomeEmail.App.SettingsForm (mkSettingsForm)
 
 
-mkSettingsPage :: Component { }
+mkSettingsPage :: Component { setPage :: Page -> Effect Unit }
 mkSettingsPage = do
   settingsForm <- mkSettingsForm
-  component "SettingsPage" \_props -> React.do
+  component "SettingsPage" \props -> React.do
     pure $
       R.div
         { className: "page settings container is-max-desktop"
@@ -19,7 +21,7 @@ mkSettingsPage = do
               { className: "has-text-right has-text-white mr-5"
               , children: [ R.text "Settings" ]
               }
-          , settingsForm {}
+          , settingsForm { setPage: props.setPage }
           ]
         }
 

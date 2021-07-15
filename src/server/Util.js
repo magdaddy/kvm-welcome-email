@@ -12,3 +12,4 @@ const jwt = require('jsonwebtoken');
 
 exports.tokenSecret = tokenSecret;
 exports.jwtSign = payload => key => options => jwt.sign(payload, key, options);
+exports.jwtVerifyImpl = token => () => jwt.verify(token, tokenSecret);
