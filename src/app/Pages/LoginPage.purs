@@ -22,7 +22,6 @@ import WelcomeEmail.Shared.Boundary (LoginData)
 
 mkLoginPage :: Component { setPage :: Page -> Effect Unit }
 mkLoginPage = do
-  -- loginForm <- mkFormComponent
   component "LoginPage" \props -> React.do
     (loginData :: LoginData) /\ setLoginData <- useState { username: "", password: "" }
     (errMsg :: String) /\ setErrMsg <- useState' ""
@@ -61,6 +60,7 @@ mkLoginPage = do
                         }
                     , field "Password: " $ R.input
                         { className: "input"
+                        , type: "password"
                         , value: loginData.password
                         , onChange: handler targetValue \val -> do
                             setLoginData _ { password = fromMaybe "" val }
@@ -77,19 +77,5 @@ mkLoginPage = do
               }
           ]
         }
-
-
-
-
--- render :: forall m.
---   MonadAff m =>
---   State -> H.ComponentHTML Action Slots m
--- render state =
---   HH.div [ cls "login container is-max-desktop" ]
---     [ HH.div [ cls "box mt-5" ]
---         [ HH.text "Login"
---         , HH.slot_ (Proxy :: _ "loginForm") 0 LoginForm.component unit
---         ]
---     ]
 
 

@@ -2,30 +2,44 @@ module WelcomeEmail.App.StatusPage where
 
 import Prelude
 
-import Data.Bifunctor (rmap)
+import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Aff (launchAff_)
-import Effect.Class (liftEffect)
-import Network.RemoteData (RemoteData(..), fromEither)
+import Effect.Console (log)
+import MagLibs.SocketIo.Client (ClientSocket, connect)
+import MagLibs.SocketIo.Message (clientEmit, clientOn, clientRemoveAllListenersFor)
+import Network.RemoteData (RemoteData(..))
 import React.Basic.DOM (css)
 import React.Basic.DOM as R
+import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api.Backend as Api
 import WelcomeEmail.App.Data (AppError, Page)
+import WelcomeEmail.Shared.SocketApi as SocketApi
 
 
 mkStatusPage :: Component { setPage :: Page -> Effect Unit }
 mkStatusPage = do
   component "StatusPage" \_props -> React.do
+    (socket :: Maybe ClientSocket) /\ setSocket <- useState' Nothing
     (isRunning :: RemoteData AppError Boolean) /\ setIsRunning <- useState' NotAsked
+
+    let
+      toggleRunning = case socket of
+        Nothing -> log $ "Error: No socket."
+        Just skt -> clientEmit SocketApi.toggleRunningMsg {} skt
     useEffectOnce do
-      launchAff_ do
-        liftEffect $ setIsRunning Loading
-        result <- Api.serverState
-        liftEffect $ setIsRunning $ fromEither $ rmap _.isRunning result
-      pure mempty
+      -- launchAff_ do
+      --   liftEffect $ setIsRunning Loading
+      --   result <- Api.serverState
+      --   liftEffect $ setIsRunning $ fromEither $ rmap _.isRunning result
+
+      skt <- connect "ws://localhost:4000/app"
+      setSocket $ Just skt
+      clientOn SocketApi.isRunningMsg skt \isRunning' -> do
+        setIsRunning $ Success isRunning'
+        log $ "isRunningMsg: " <> show isRunning'
+      pure $ clientRemoveAllListenersFor SocketApi.isRunningMsg skt
     pure $
       R.div
         { className: "page settings container is-max-desktop"
@@ -55,8 +69,8 @@ mkStatusPage = do
                               }
                           , R.button
                               { className: "button " <> bclass
-                              --, HE.onClick \_ -> ToggleRunning ]
                               , children: [ R.text if isRunning' then "Stop" else "Start" ]
+                              , onClick: handler_ toggleRunning
                               }
                           ]
                         }

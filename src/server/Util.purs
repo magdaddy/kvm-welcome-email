@@ -13,6 +13,9 @@ import Foreign (Foreign)
 import Node.Process (exit)
 import Simple.JSON (readJSON)
 
+
+foreign import dotenvConfig :: Effect Unit
+
 data NodeEnv
   = Development
   | Production
@@ -44,6 +47,9 @@ getUsers' = do
   void $ throwError "lulu"
   pure $ lmap show $ readJSON str
 
+foreign import getNodeEnvImpl :: Effect String
+foreign import getUsersImpl :: Effect String
+
 
 unwrapOrExit :: forall a b. Show a => String -> Either a b -> Effect b
 unwrapOrExit msg = case _ of
@@ -62,11 +68,15 @@ jwtVerify token = do
   result <- try $ jwtVerifyImpl token
   pure $ lmap (\e -> name e <> ": " <> message e) result
 
-foreign import getNodeEnvImpl :: Effect String
-foreign import getUsersImpl :: Effect String
-
-foreign import dotenvConfig :: Effect Unit
-
 foreign import tokenSecret :: String
 foreign import jwtSign :: forall r1 r2. Record r1 -> String -> Record r2 -> String
 foreign import jwtVerifyImpl :: String -> Effect Foreign
+
+-- turf
+
+foreign import isInAt :: forall r. { lat :: Number, lng :: Number | r } -> Boolean
+foreign import isInDe :: forall r. { lat :: Number, lng :: Number | r } -> Boolean
+foreign import isInCh :: forall r. { lat :: Number, lng :: Number | r } -> Boolean
+
+isInDach :: forall r. { lat :: Number, lng :: Number | r } -> Boolean
+isInDach p = isInDe p || isInAt p || isInCh p

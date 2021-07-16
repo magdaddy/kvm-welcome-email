@@ -44,6 +44,9 @@ defaultSettings =
       , version: 33
       , contact_name: Just "Slowtec"
       , email: Just "post@slowtec.de"
+      , lat: 37.2
+      , lng: 120.7
+      , country: Nothing
       }
   , senderAddress: ""
   }

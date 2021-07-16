@@ -21,6 +21,7 @@ import Node.Express.Middleware.Static (static)
 import Node.Express.Request (getBody', getRequestHeader)
 import Node.Express.Response (send, setStatus)
 import Node.Express.Types (Middleware)
+import Node.HTTP (Server) as Http
 import Simple.JSON (class ReadForeign, read, writeJSON)
 import WelcomeEmail.Server.Core (theloop)
 import WelcomeEmail.Server.Data (AppError(..))
@@ -125,12 +126,12 @@ defErrHandler = case _ of
     setStatus 400
     send { error: show err }
 
-runServer :: Ref State -> Effect Unit
+runServer :: Ref State -> Effect Http.Server
 runServer stateRef = do
   log "Starting up..."
-  void $ listenHttp (server stateRef) port \_ ->
+  httpServer <- listenHttp (server stateRef) port \_ ->
     log $ "Listening on " <> show port
-  pure unit
+  pure httpServer
 
 sendError :: String -> Handler
 sendError err = send (writeJSON { error: err })

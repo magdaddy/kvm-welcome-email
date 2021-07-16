@@ -110,6 +110,7 @@ let upstream =
 in  upstream
   with express = ../../purs-fork/purescript-express/spago.dhall as Location
   with nodemailer = ../../purs-fork/purescript-nodemailer/spago.dhall as Location
+  with maglibs = ../../purescript-maglibs/spago.dhall as Location
   with convertable-options =
     { dependencies =
         [ "console", "effect", "maybe", "record" ]

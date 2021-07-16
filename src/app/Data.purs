@@ -9,12 +9,12 @@ import Effect.Exception as Exn
 import Foreign (MultipleErrors)
 
 
-
 data Page
   = StatusPage
   | TemplatePage
   | SettingsPage
   | LoginPage
+
 derive instance eqPage :: Eq Page
 derive instance genericPage :: Generic Page _
 instance showPage :: Show Page where
@@ -36,47 +36,4 @@ instance showAppError :: Show AppError where
     ServerError err -> "ServerError: " <>  err
     Unauthorized err -> "Unauthorized: " <>  err
     OtherError err -> "OtherError: " <> err
-
--- type OpaqueSlot id = forall query. H.Slot query Void id
-
--- type Slots =
---   ( rawHtml :: OpaqueSlot Int
---   , settingsForm :: OpaqueSlot Int
---   , loginForm :: OpaqueSlot Int
---   , testMail :: OpaqueSlot Int
---   )
-
--- type State =
---   { isRunning :: RemoteData AppError Boolean
---   , defaultEntry :: Entry
---   , settings :: RemoteData AppError Settings
---   , page :: Page
---   , templatePage :: TemplatePageState
---   }
-
--- type TemplatePageState =
---   { edit :: Boolean
---   , template :: RemoteData AppError EmailTemplate
---   , templateEdited :: EmailTemplate
---   }
-
--- type Contact = { name :: String, text :: String }
-
--- data Action
---   = Initialize
---   | ShowPage Page
-
---   | ToggleRunning
---   | GetServerState
-
---   | GetTemplate
---   | EditTemplateClicked
---   | SaveTemplateClicked
---   | CancelEditTemplateClicked
---   | TemplateSubjectEdited String
---   | TemplateBodyEdited String
-
---   | GetSettings
-
-
 

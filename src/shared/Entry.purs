@@ -19,6 +19,9 @@ type Entry
     , version :: Int
     , contact_name :: Maybe String
     , email :: Maybe String
+    , country :: Maybe String
+    , lat :: Number
+    , lng :: Number
     }
 
 formatDateTime :: String -> DateTime -> String
