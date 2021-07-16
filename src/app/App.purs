@@ -18,7 +18,7 @@ import WelcomeEmail.App.TemplatePage (mkTemplatePage)
 import WelcomeEmail.Shared.Boundary (defaultSettings)
 
 
-gPage = LoginPage :: Page
+gPage = StatusPage :: Page
 
 mkApp :: Component Unit
 mkApp = do

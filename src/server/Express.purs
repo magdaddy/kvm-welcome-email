@@ -155,6 +155,5 @@ ensureAuthorized = do
   token <- case stripPrefix (Pattern "Bearer ") sauth of
     Nothing -> throwError $ Unauthorized "Malformed authorization header"
     Just t -> pure t
-  liftEffect $ log $ show token
   result <- liftEffect $ jwtVerify token
   void $ except $ lmap Unauthorized result

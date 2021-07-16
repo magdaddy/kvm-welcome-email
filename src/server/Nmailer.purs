@@ -18,17 +18,6 @@ import WelcomeEmail.Shared.Boundary (Email)
 import WelcomeEmail.Shared.Marked (markedS)
 import WelcomeEmail.Shared.Template (expand)
 
--- tsend :: Effect Unit
--- tsend = do
---   s <- loadState
---   case s of
---     Left err -> throw err
---     Right ss -> launchAff_ $ do
---       result <- send ss.nodeMailer
---       case result of
---         Left err -> do
---           liftEffect $ log $ message err
---         Right _ -> liftEffect $ log "send successful"
 
 send :: TransportConfig () -> Message -> Aff (Either AppError Unit)
 send conf msg = do

@@ -20,21 +20,11 @@ import WelcomeEmail.Server.Log (LogLevel(..), logL, logSent)
 import WelcomeEmail.Server.OfdbApi (getRecentlyChanged)
 import WelcomeEmail.Server.Settings (loadSettings)
 import WelcomeEmail.Server.Template (loadTemplate)
+import WelcomeEmail.Server.Util (isInDach)
 import WelcomeEmail.Shared.Entry (Entry, formatInstantUnix)
 import WelcomeEmail.Shared.State (State)
 import WelcomeEmail.Shared.Template (EmailTemplate, expand)
 
--- printEntryLine :: Entry -> Effect Unit
--- printEntryLine entry = log $ created <> " v" <> version <> " " <> entry.title
---   where
---   created = case ms # instant of
---     Nothing -> "---"
---     Just instant -> instant # formatInstant # show
---   ms = Milliseconds (entry.created * 1000.0)
---   version = entry.version # show
-
--- printEntries :: Array Entry -> Effect Unit
--- printEntries entries = traverse_ printEntryLine entries
 
 sendEmails :: Array Entry -> Aff Unit
 sendEmails entries = do
@@ -65,14 +55,15 @@ theloop stateRef = do
   -- let s = maybe "" formatInstantUnix mbSince
   let s = formatInstantUnix since
   let u = formatInstantUnix until
-  result <- getRecentlyChanged [Tuple "since" s, Tuple "until" u, Tuple "limit" (show 9)]
+  -- result <- getRecentlyChanged [Tuple "since" s, Tuple "until" u, Tuple "limit" (show 9)]
+  result <- getRecentlyChanged [Tuple "since" s, Tuple "until" u]
   case result of
     Left err -> do
       liftEffect $ logL Error err
       delay $ convertDuration $ Seconds 5.0
       theloop stateRef
     Right entries -> do
-      let newEntries = filter (\e -> e.version == 0) entries
+      let newEntries = filter (\e -> e.version == 0 && isInDach e) entries
       -- liftEffect $ printEntries entries
       sendEmails newEntries
       newState <- liftEffect $ Ref.modify _ { saved { latestInstant = Just until } } stateRef

@@ -2,44 +2,49 @@ module WelcomeEmail.App.StatusPage where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Bifunctor (rmap)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Console (log)
-import MagLibs.SocketIo.Client (ClientSocket, connect)
-import MagLibs.SocketIo.Message (clientEmit, clientOn, clientRemoveAllListenersFor)
-import Network.RemoteData (RemoteData(..))
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
+import Network.RemoteData (RemoteData(..), fromEither)
 import React.Basic.DOM (css)
 import React.Basic.DOM as R
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState')
 import React.Basic.Hooks as React
+import WelcomeEmail.App.Api.Backend as Api
 import WelcomeEmail.App.Data (AppError, Page)
-import WelcomeEmail.Shared.SocketApi as SocketApi
 
 
 mkStatusPage :: Component { setPage :: Page -> Effect Unit }
 mkStatusPage = do
   component "StatusPage" \_props -> React.do
-    (socket :: Maybe ClientSocket) /\ setSocket <- useState' Nothing
+    -- (socket :: Maybe ClientSocket) /\ setSocket <- useState' Nothing
     (isRunning :: RemoteData AppError Boolean) /\ setIsRunning <- useState' NotAsked
 
     let
-      toggleRunning = case socket of
-        Nothing -> log $ "Error: No socket."
-        Just skt -> clientEmit SocketApi.toggleRunningMsg {} skt
-    useEffectOnce do
-      -- launchAff_ do
-      --   liftEffect $ setIsRunning Loading
-      --   result <- Api.serverState
-      --   liftEffect $ setIsRunning $ fromEither $ rmap _.isRunning result
+      -- toggleRunning = case socket of
+      --   Nothing -> log $ "Error: No socket."
+      --   Just skt -> clientEmit SocketApi.toggleRunningMsg {} skt
+      toggleRunning = launchAff_ do
+        liftEffect $ setIsRunning Loading
+        result <- Api.toggleRunning
+        liftEffect $ setIsRunning $ fromEither $ rmap _.isRunning result
 
-      skt <- connect "ws://localhost:4000/app"
-      setSocket $ Just skt
-      clientOn SocketApi.isRunningMsg skt \isRunning' -> do
-        setIsRunning $ Success isRunning'
-        log $ "isRunningMsg: " <> show isRunning'
-      pure $ clientRemoveAllListenersFor SocketApi.isRunningMsg skt
+    useEffectOnce do
+      launchAff_ do
+        liftEffect $ setIsRunning Loading
+        result <- Api.serverState
+        liftEffect $ setIsRunning $ fromEither $ rmap _.isRunning result
+
+      -- skt <- connect "ws://localhost:4000/app"
+      -- setSocket $ Just skt
+      -- clientOn SocketApi.isRunningMsg skt \isRunning' -> do
+      --   setIsRunning $ Success isRunning'
+      --   log $ "isRunningMsg: " <> show isRunning'
+      -- pure $ clientRemoveAllListenersFor SocketApi.isRunningMsg skt
+      pure mempty
     pure $
       R.div
         { className: "page settings container is-max-desktop"
@@ -78,34 +83,5 @@ mkStatusPage = do
               }
           ]
         }
-
-
--- render :: forall m.
---   MonadAff m =>
---   ManageSettings m =>
---   SendTestMail m =>
---   State -> H.ComponentHTML Action Slots m
--- render state =
---   HH.div [ cls "settings container is-max-desktop" ]
---     [ HH.div [ cls "box mt-5" ]
---         [ case state.isRunning of
---             NotAsked -> HH.text "Not asked"
---             Loading -> HH.text "Loading..."
---             Failure e -> HH.text $ show e
---             Success isRunning -> do
---               let bclass = if isRunning then "is-primary" else "is-primary"
---               let statusText = if isRunning then "running" else "not running"
---               let bgClass = if isRunning then "has-background-success-dark" else "has-background-danger-dark"
---               HH.div [ cls "is-flex is-align-items-center" ]
---                 [ HH.span [ cls "mr-2", HP.style "inline-block;" ]
---                     [ HH.text $ "Status: " <> statusText ]
---                 , HH.span [ cls $ bgClass <> " mr-2", HP.style "height: 2rem; width: 2rem; border-radius: 50%; display: inline-block;" ]
---                     [  ]
---                 , HH.button
---                     [ cls $ "button " <> bclass, HE.onClick \_ -> ToggleRunning ]
---                     [ HH.text if isRunning then "Stop" else "Start" ]
---                 ]
---         ]
---     ]
 
 
