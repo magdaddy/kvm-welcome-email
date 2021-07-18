@@ -21,7 +21,6 @@
   , "maglibs"
   , "math"
   , "maybe"
-  , "media-types"
   , "newtype"
   , "node-buffer"
   , "node-fs"
