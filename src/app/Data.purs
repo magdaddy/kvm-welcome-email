@@ -15,9 +15,9 @@ data Page
   | SettingsPage
   | LoginPage
 
-derive instance eqPage :: Eq Page
-derive instance genericPage :: Generic Page _
-instance showPage :: Show Page where
+derive instance Eq Page
+derive instance Generic Page _
+instance Show Page where
   show = genericShow
 
 data AppError
@@ -28,7 +28,7 @@ data AppError
   | Unauthorized String
   | OtherError String
 
-instance showAppError :: Show AppError where
+instance Show AppError where
   show = case _ of
     HttpError err -> "AffjaxError: " <> AX.printError err
     JsonError err -> "JsonError: " <> show err

@@ -10,6 +10,7 @@ import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Control.Monad.Except (ExceptT, catchError, except, lift, throwError, withExceptT)
 import Data.Argonaut (encodeJson)
+import Data.Array (mapMaybe, reverse)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
@@ -17,10 +18,11 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import MagLibs.DateFns (parseISO)
 import Simple.JSON (class ReadForeign, readJSON)
 import WelcomeEmail.App.Api.Web (getTokenFromLocalStorage)
 import WelcomeEmail.App.Data (AppError(..))
-import WelcomeEmail.Shared.Boundary (ErrorResponse, LoginData, Settings, TestMailPayload, TestMailResponse, TokenResponse)
+import WelcomeEmail.Shared.Boundary (ErrorResponse, LastLogEntry, LastLogType(..), LogLine, LoginData, Settings, TestMailPayload, TestMailResponse, TokenResponse)
 import WelcomeEmail.Shared.Template (EmailTemplate)
 
 
@@ -36,29 +38,21 @@ login loginData = do
     Right (tokenResponse :: TokenResponse) -> pure tokenResponse.token
 
 
-toggleRunning :: Aff (Either AppError { isRunning :: Boolean })
+toggleRunning :: ExceptT AppError Aff { isRunning :: Boolean }
 toggleRunning = do
+  let url = "/api/togglerunning"
   liftEffect $ log url
-  result <- AX.post ResponseFormat.string url Nothing
-  case result of
-    Left err -> pure $ Left $ HttpError err
-    Right response -> case response.status of
-      StatusCode 200 -> pure $ lmap JsonError $ readJSON response.body
-      _ -> pure $ Left $ OtherError "server responded not-ok"
-  where
-  url = "http://localhost:4000/togglerunning"
+  response <- reqAuth POST url Nothing
+  sstate <- parseJsonResponse response
+  pure sstate
 
-serverState :: Aff (Either AppError { isRunning :: Boolean })
+serverState :: ExceptT AppError Aff { isRunning :: Boolean }
 serverState = do
+  let url = "/api/serverstate"
   liftEffect $ log url
-  result <- AX.get ResponseFormat.string url
-  case result of
-    Left err -> pure $ Left $ HttpError err
-    Right response -> case response.status of
-      StatusCode 200 -> pure $ lmap JsonError $ readJSON response.body
-      _ -> pure $ Left $ OtherError "server responded not-ok"
-  where
-  url = "http://localhost:4000/serverstate"
+  response <- reqAuth GET url Nothing
+  sstate <- parseJsonResponse response
+  pure sstate
 
 
 getTemplate :: ExceptT AppError Aff EmailTemplate
@@ -95,16 +89,47 @@ saveSettings settings = do
   pure unit
 
 
-sendTestMail :: TestMailPayload -> Aff (Either AppError TestMailResponse)
+sendTestMail :: TestMailPayload -> ExceptT AppError Aff TestMailResponse
 sendTestMail pl = do
+  let url = "/api/sendtestmail"
   liftEffect $ log url
   let reqBody = json $ encodeJson pl
-  result <- AX.post ResponseFormat.string url (Just reqBody)
-  case result of
-    Left err -> pure $ Left $ HttpError err
-    Right response -> pure $ lmap JsonError $ readJSON response.body
+  response <- reqAuth POST url (Just reqBody)
+  tmr <- parseJsonResponse response
+  pure tmr
+  -- result <- AX.post ResponseFormat.string url (Just reqBody)
+  -- case result of
+  --   Left err -> pure $ Left $ HttpError err
+  --   Right response -> pure $ lmap JsonError $ readJSON response.body
+
+
+getLastLogs :: ExceptT AppError Aff (Array LastLogEntry)
+getLastLogs = do
+  let url = "/api/lastlogs"
+  liftEffect $ log url
+  response <- reqAuth GET url Nothing
+  logLines :: Array LogLine <- parseJsonResponse response
+  -- liftEffect $ log $ show logLines
+  -- let resLogLines = map parseLogLine lines
+  -- logLines :: Array LogLine <- case find isLeft resLogLines of
+  --   Just (Left err) -> except (Left err)
+  --   _ -> pure $ mapMaybe hush resLogLines
+  pure $ reverse $ mapMaybe toLogEntry logLines
+
+toLogEntry :: LogLine -> Maybe LastLogEntry
+toLogEntry { timestamp, level, message, wasSent, entry } = result
   where
-  url = "http://localhost:4000/sendtestmail"
+  result
+    | level == "error" = Just { timestamp: tsDate, type: Error message }
+    | level == "warn" = Just { timestamp: tsDate, type: Warn message }
+    | level == "info" && wasSent == Just true = case entry of
+        Nothing -> Nothing
+        Just e -> Just { timestamp: tsDate, type: EmailSent e }
+    | otherwise = Nothing
+  tsDate = parseISO timestamp
+
+-- parseLogLine :: String -> Either AppError LogLine
+-- parseLogLine s = lmap JsonError $ readJSON s
 
 
 parseJsonResponse :: forall a. ReadForeign a => Response String -> ExceptT AppError Aff a
@@ -133,53 +158,4 @@ getToken :: ExceptT AppError Aff String
 getToken = liftEffect getTokenFromLocalStorage >>= case _ of
   Nothing -> throwError $ Unauthorized "No token"
   Just token -> pure token
-
-
-
-
-
--- getTemplate :: Aff (Either AppError EmailTemplate)
--- getTemplate = do
---   liftEffect $ log url
---   result <- AX.get ResponseFormat.string url
---   case result of
---     Left err -> pure $ Left $ HttpError err
---     Right response -> case response.status of
---       -- StatusCode 200 -> pure $ Right $ split (Pattern "\n") response.body
---       StatusCode 200 -> pure $ lmap JsonError $ readJSON response.body
---       _ -> pure $ Left $ OtherError "server responded not-ok"
---   where
---   url = "http://localhost:4000/template"
-
--- saveTemplate :: EmailTemplate -> Aff (Either AppError Unit)
--- saveTemplate template = do
---   liftEffect $ log url
---   -- let reqBody = string (joinWith "\n" template)
---   -- let reqBody = string (template.subject <> "\n" <> template.body)
---   let reqBody = json $ encodeJson template
---   _ <- AX.post ResponseFormat.string url (Just reqBody)
---   pure $ Right unit
---   where
---   url = "http://localhost:4000/template"
-
--- getSettings :: Aff (Either AppError Settings)
--- getSettings = do
---   liftEffect $ log url
---   result <- AX.get ResponseFormat.string url
---   case result of
---     Left err -> pure $ Left $ HttpError err
---     Right response -> case response.status of
---       StatusCode 200 -> pure $ lmap JsonError $ readJSON response.body
---       _ -> pure $ Left $ OtherError "server responded not-ok"
---   where
---   url = "http://localhost:4000/api/settings"
-
--- saveSettings :: Settings -> Aff (Either AppError Unit)
--- saveSettings settings = do
---   liftEffect $ log url
---   let reqBody = json $ encodeJson settings
---   _ <- AX.post ResponseFormat.json url (Just reqBody)
---   pure $ Right unit
---   where
---   url = "http://localhost:4000/settings"
 

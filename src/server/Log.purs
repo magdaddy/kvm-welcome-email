@@ -5,6 +5,7 @@ import Prelude
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
 import Effect (Effect)
+import Simple.JSON (write)
 import WelcomeEmail.Server.Winston as W
 import WelcomeEmail.Shared.Entry (Entry)
 
@@ -32,7 +33,7 @@ logL level str = W.log { level: winstonLevel level, message: str }
 
 
 logSent :: Entry -> Boolean -> Effect Unit
-logSent entry wasSent = W.log { level, message, wasSent, entry }
+logSent entry wasSent = W.log { level, message, wasSent, entry: write entry }
   where
   level = winstonLevel Info
   message

@@ -31,10 +31,11 @@ _EmailTemplateBody = _Newtype <<< prop (Proxy :: _ "body")
 expand :: Entry -> EmailTemplate -> Email
 expand entry (EmailTemplate t) = { subject: applyPatts t.subject, body: applyPatts t.body }
   where
-  link = "https://kartevonmorgen.org/#/?entry=" <> entry.id
   patts = [ replaceAll (Pattern "{{title}}") (Replacement entry.title)
           , replaceAll (Pattern "{{created}}") (Replacement $ formatCreatedEmail entry.created)
-          , replaceAll (Pattern "{{link}}") (Replacement link)
+          , replaceAll (Pattern "{{link}}") (Replacement $ entryLink entry)
           ]
   applyPatts = foldl (<<<) identity patts
 
+entryLink :: Entry -> String
+entryLink entry = "https://kartevonmorgen.org/#/?entry=" <> entry.id

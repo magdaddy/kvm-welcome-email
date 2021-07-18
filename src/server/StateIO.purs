@@ -21,10 +21,7 @@ import WelcomeEmail.Shared.Util (writeJSONPretty)
 filename :: String
 filename = "state.json"
 
-type SavedStateJson
-  = { latestInstant :: Maybe Number
-    -- , isRunning :: Boolean
-    }
+type SavedStateJson = { latestInstant :: Maybe Number }
 
 loadState :: Effect (Either String SavedState)
 loadState = do
@@ -34,12 +31,8 @@ loadState = do
     pure do
       statej <- lmap show $ readJSON contents
       let state = fromJson statej
-      -- json <- lmap show $ parseJson contents
-      -- state <- decodeJsonState json
-      -- 1618756036
-      -- 1618750000
-      let stat = state { latestInstant = secToInst $ Just 1618740000.0 }
-      pure stat
+      -- let stat = state { latestInstant = secToInst $ Just 1618740000.0 }
+      pure state
   else
     pure $ Right { latestInstant: Nothing }
 

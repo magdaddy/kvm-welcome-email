@@ -25,6 +25,7 @@ import Node.HTTP (Server) as Http
 import Simple.JSON (class ReadForeign, read, writeJSON)
 import WelcomeEmail.Server.Core (theloop)
 import WelcomeEmail.Server.Data (AppError(..))
+import WelcomeEmail.Server.LastLogs (loadLastLogs)
 import WelcomeEmail.Server.Log (LogLevel(..), log, logL)
 import WelcomeEmail.Server.Settings (loadSettings, saveSettings)
 import WelcomeEmail.Server.Template (loadTemplate, saveTemplate)
@@ -46,9 +47,6 @@ server stateRef = do
   useExternal cors
   useExternal text
   useExternal json
-
-  get "/" do
-    send "Hello, World!"
 
   post "/api/login" $ do
     withErrorHandler defErrHandler do
@@ -78,6 +76,7 @@ server stateRef = do
 
   post "/api/settings" do
     withErrorHandler defErrHandler do
+      ensureAuthorized
       settings :: Settings <- parseJsonReqBody
       liftEffect $ saveSettings settings
       lift $ send unit
@@ -95,25 +94,36 @@ server stateRef = do
       liftEffect $ saveTemplate templ
       lift $ send unit
 
-  get "/serverstate" do
-    state <- liftEffect $ Ref.read stateRef
-    case state.running of
-      Nothing -> send $ writeJSON { isRunning: false }
-      Just _fiber -> send $ writeJSON { isRunning: true }
+  get "/api/serverstate" do
+    withErrorHandler defErrHandler do
+      ensureAuthorized
+      state <- liftEffect $ Ref.read stateRef
+      case state.running of
+        Nothing -> lift $ send $ writeJSON { isRunning: false }
+        Just _fiber -> lift $ send $ writeJSON { isRunning: true }
 
-  post "/togglerunning" do
-    state <- liftEffect $ Ref.read stateRef
-    case state.running of
-      Nothing -> do
-        fiber <- liftAff $ forkAff $ theloop stateRef
-        liftEffect $ Ref.modify_ _ { running = Just fiber } stateRef
-        liftEffect $ logL Verbose "started running"
-        send $ writeJSON { isRunning: true }
-      Just fiber -> do
-        liftAff $ killFiber (error "stop requested") fiber
-        liftEffect $ Ref.modify_ _ { running = Nothing } stateRef
-        liftEffect $ logL Verbose "stopped running"
-        send $ writeJSON { isRunning: false }
+  post "/api/togglerunning" do
+    withErrorHandler defErrHandler do
+      ensureAuthorized
+      state <- liftEffect $ Ref.read stateRef
+      case state.running of
+        Nothing -> do
+          fiber <- liftAff $ forkAff $ theloop stateRef
+          liftEffect $ Ref.modify_ _ { running = Just fiber } stateRef
+          liftEffect $ logL Warn "Sending-service started"
+          lift $ send $ writeJSON { isRunning: true }
+        Just fiber -> do
+          liftAff $ killFiber (error "stop requested") fiber
+          liftEffect $ Ref.modify_ _ { running = Nothing } stateRef
+          liftEffect $ logL Warn "Sending-service stopped"
+          lift $ send $ writeJSON { isRunning: false }
+
+  get "/api/lastlogs" do
+    withErrorHandler defErrHandler do
+      ensureAuthorized
+      result <- liftAff $ runExceptT $ loadLastLogs 300
+      lastLogs <- except result
+      lift $ send $ lastLogs
 
   use $ static "./public"
 
@@ -128,9 +138,9 @@ defErrHandler = case _ of
 
 runServer :: Ref State -> Effect Http.Server
 runServer stateRef = do
-  log "Starting up..."
+  logL Warn "Server starting up..."
   httpServer <- listenHttp (server stateRef) port \_ ->
-    log $ "Listening on " <> show port
+    logL Warn $ "Server listening on " <> show port
   pure httpServer
 
 sendError :: String -> Handler

@@ -1,5 +1,6 @@
 module WelcomeEmail.Shared.Boundary where
 
+import Data.JSDate (JSDate)
 import Data.Maybe (Maybe(..))
 import WelcomeEmail.Shared.Entry (Entry)
 
@@ -62,3 +63,18 @@ type ServerErrorResponse = { error :: Maybe String }
 type ErrorResponse = { error :: String }
 
 type TokenResponse = { token :: String }
+
+type LastLogEntry = { timestamp :: JSDate, type :: LastLogType }
+
+data LastLogType
+  = Error String
+  | Warn String
+  | EmailSent Entry
+
+type LogLine =
+  { timestamp :: String
+  , level :: String
+  , message :: String
+  , wasSent :: Maybe Boolean
+  , entry :: Maybe Entry
+  }

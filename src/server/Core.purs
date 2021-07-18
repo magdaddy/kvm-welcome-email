@@ -6,7 +6,7 @@ import Data.Array (filter)
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..))
-import Data.Time.Duration (Seconds(..), convertDuration)
+import Data.Time.Duration (Hours(..), convertDuration)
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, delay)
 import Effect.Class (liftEffect)
@@ -60,7 +60,7 @@ theloop stateRef = do
   case result of
     Left err -> do
       liftEffect $ logL Error err
-      delay $ convertDuration $ Seconds 5.0
+      delay $ convertDuration $ Hours 1.0
       theloop stateRef
     Right entries -> do
       let newEntries = filter (\e -> e.version == 0 && isInDach e) entries
@@ -68,5 +68,5 @@ theloop stateRef = do
       sendEmails newEntries
       newState <- liftEffect $ Ref.modify _ { saved { latestInstant = Just until } } stateRef
       liftEffect $ saveState newState.saved
-      delay $ convertDuration $ Seconds 15.0
+      delay $ convertDuration $ Hours 1.0
       theloop stateRef
