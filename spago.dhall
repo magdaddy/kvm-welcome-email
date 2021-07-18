@@ -29,6 +29,7 @@
   , "node-process"
   , "nodemailer"
   , "now"
+  , "nullable"
   , "partial"
   , "prelude"
   , "profunctor-lenses"

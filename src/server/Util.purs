@@ -2,16 +2,16 @@ module WelcomeEmail.Server.Util where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Console (log)
+import Effect.Console (error, log)
 import Effect.Exception (message, name, try)
 import Foreign (Foreign)
 import Node.Process (exit)
-import Simple.JSON (readJSON)
+import Simple.JSON (readJSON, readJSON_)
 
 
 foreign import dotenvConfig :: Effect Unit
@@ -33,6 +33,7 @@ isOther :: NodeEnv -> Boolean
 isOther (Other _) = true
 isOther _ = false
 
+foreign import getNodeEnvImpl :: Effect String
 
 type User = { name :: String, pwd :: String }
 
@@ -41,14 +42,21 @@ getUsers = do
   str <- getUsersImpl
   pure $ lmap show $ readJSON str
 
-getUsers' :: forall m. MonadEffect m => MonadThrow String m => m (Either String (Array User))
-getUsers' = do
-  str <- liftEffect $ getUsersImpl
-  void $ throwError "lulu"
-  pure $ lmap show $ readJSON str
-
-foreign import getNodeEnvImpl :: Effect String
 foreign import getUsersImpl :: Effect String
+
+getHost :: Effect (Maybe String)
+getHost = getHostImpl >>= pure <<< toMaybe
+
+foreign import getHostImpl :: Effect (Nullable String)
+
+getPort :: Effect (Maybe Int)
+getPort = do
+  mbstr <- getPortImpl >>= pure <<< toMaybe
+  pure do
+    str <- mbstr
+    readJSON_ str
+
+foreign import getPortImpl :: Effect (Nullable String)
 
 
 unwrapOrExit :: forall a b. Show a => String -> Either a b -> Effect b
@@ -58,10 +66,12 @@ unwrapOrExit msg = case _ of
     exit 1
   Right result -> pure result
 
--- unwrapOr :: forall a b. Show a => (a -> Effect Unit) -> Either a b -> Effect b
--- unwrapOr handler = case _ of
---   Left err -> handler err
---   Right result -> pure result
+unwrapOrExitMb :: forall a. String -> Maybe a -> Effect a
+unwrapOrExitMb msg = case _ of
+  Nothing -> do
+    error msg
+    exit 1
+  Just result -> pure result
 
 jwtVerify :: String -> Effect (Either String Foreign)
 jwtVerify token = do

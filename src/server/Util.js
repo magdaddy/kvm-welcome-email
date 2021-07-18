@@ -8,6 +8,8 @@ exports.dotenvConfig = () => dotenv.config();
 
 exports.getNodeEnvImpl = () => process.env.NODE_ENV;
 exports.getUsersImpl = () => process.env.USERS;
+exports.getHostImpl = () => process.env.HOST;
+exports.getPortImpl = () => process.env.PORT;
 
 
 // jwt

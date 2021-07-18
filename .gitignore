@@ -11,7 +11,7 @@
 /.cache
 /.parcel-cache
 dist/
-prod/*
+prod/
 /dev/bulma-cfg.css
 
 .env
@@ -19,3 +19,4 @@ prod/*
 /state.json
 /settings.json
 /template.txt
+/server.js

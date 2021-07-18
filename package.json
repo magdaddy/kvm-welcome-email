@@ -4,9 +4,12 @@
   "private": true,
   "author": "Magnus Herold",
   "scripts": {
+    "build": "spago build",
+    "test": "spago test",
     "serve": "parcel dev/index.html",
     "css-build": "node-sass --omit-source-map-url dev/bulma-cfg.scss dev/bulma-cfg.css",
-    "css-watch": "npm run css-build -- --watch"
+    "css-watch": "npm run css-build -- --watch",
+    "build-prod": "mkdir -p prod && cp dev/index.html dev/bulma-cfg.css prod/ && rm -rf dist && spago bundle-app -m WelcomeEmail.App.Main --to prod/index.js && parcel build prod/index.html --no-scope-hoist --no-source-maps"
   },
   "dependencies": {
     "@turf/turf": "^6.5.0",
@@ -25,7 +28,7 @@
   },
   "devDependencies": {
     "bulma": "^0.9.2",
-    "node-sass": "^5.0.0",
+    "node-sass": "^6.0.1",
     "parcel": "^2.0.0-beta.3.1"
   }
 }

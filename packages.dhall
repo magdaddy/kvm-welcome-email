@@ -108,9 +108,73 @@ let upstream =
       https://github.com/purescript/package-sets/releases/download/psc-0.14.0-20210409/packages.dhall sha256:e81c2f2ce790c0e0d79869d22f7a37d16caeb5bd81cfda71d46c58f6199fd33f
 
 in  upstream
-  with express = ../../purs-fork/purescript-express/spago.dhall as Location
-  with nodemailer = ../../purs-fork/purescript-nodemailer/spago.dhall as Location
-  with maglibs = ../../purescript-maglibs/spago.dhall as Location
+  -- with express = ../../purs-fork/purescript-express/spago.dhall as Location
+  with express =
+    { dependencies =
+        [ "aff"
+        , "arrays"
+        , "effect"
+        , "either"
+        , "exceptions"
+        , "foreign"
+        , "foreign-generic"
+        , "foreign-object"
+        , "functions"
+        , "maybe"
+        , "node-http"
+        , "prelude"
+        , "psci-support"
+        , "strings"
+        , "test-unit"
+        , "transformers"
+        , "unsafe-coerce"
+        ]
+    , repo =
+        "https://github.com/purescript-express/purescript-express.git"
+    , version = "v0.9.0"
+    }
+  -- with nodemailer = ../../purs-fork/purescript-nodemailer/spago.dhall as Location
+  with nodemailer =
+    { dependencies =
+        [ "aff"
+        , "console"
+        , "convertable-options"
+        , "effect"
+        , "node-fs"
+        , "node-streams"
+        , "psci-support"
+        , "simple-json"
+        ]
+    , repo =
+        "https://github.com/magdaddy/purescript-nodemailer.git"
+    , version = "v3.1.0"
+    }
+  -- with maglibs = ../../purescript-maglibs/spago.dhall as Location
+  with maglibs =
+    { dependencies =
+        [ "aff"
+        , "console"
+        , "effect"
+        , "either"
+        , "exceptions"
+        , "foreign"
+        , "js-date"
+        , "maybe"
+        , "newtype"
+        , "node-http"
+        , "nullable"
+        , "prelude"
+        , "psci-support"
+        , "react-basic-hooks"
+        , "simple-json"
+        , "transformers"
+        , "typelevel-prelude"
+        , "variant"
+        ]
+    , repo =
+        "https://github.com/magdaddy/purescript-maglibs.git"
+    , version = "v0.0.2"
+    }
   with convertable-options =
     { dependencies =
         [ "console", "effect", "maybe", "record" ]

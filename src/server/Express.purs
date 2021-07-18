@@ -15,7 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import Nmailer (sendTestMail)
-import Node.Express.App (App, get, listenHttp, post, use, useExternal)
+import Node.Express.App (App, get, listenHostHttp, post, use, useExternal)
 import Node.Express.Handler (Handler, HandlerM)
 import Node.Express.Middleware.Static (static)
 import Node.Express.Request (getBody', getRequestHeader)
@@ -38,8 +38,6 @@ import WelcomeEmail.Shared.Template (EmailTemplate)
 foreign import cors :: Middleware
 foreign import text :: Middleware
 foreign import json :: Middleware
-
-port = 4000 :: Int
 
 server :: Ref State -> App
 server stateRef = do
@@ -125,7 +123,7 @@ server stateRef = do
       lastLogs <- except result
       lift $ send $ lastLogs
 
-  use $ static "./public"
+  use $ static "./dist"
 
 
 defErrHandler :: AppError -> Handler
@@ -136,11 +134,11 @@ defErrHandler = case _ of
     setStatus 400
     send { error: show err }
 
-runServer :: Ref State -> Effect Http.Server
-runServer stateRef = do
+runServer :: String -> Int -> Ref State -> Effect Http.Server
+runServer host port stateRef = do
   logL Warn "Server starting up..."
-  httpServer <- listenHttp (server stateRef) port \_ ->
-    logL Warn $ "Server listening on " <> show port
+  httpServer <- listenHostHttp (server stateRef) port host \_ ->
+    logL Warn $ "Server listening on " <> host <> ":" <> show port
   pure httpServer
 
 sendError :: String -> Handler
