@@ -1,0 +1,107 @@
+openapi: 3.0.3
+info:
+  title: Subscriptions API
+  version: 0.0.0
+  contact:
+    name: slowtec GmbH
+    url: 'https://slowtec.de'
+  license:
+    name: AGPLv3
+    url: 'https://github.com/slowtec/openfairdb/blob/master/LICENSE'
+servers:
+  - url: 'https://example.com/'
+    description: Public production server
+paths:
+  /subscribe:
+    post:
+      tags:
+        - Subscriptions
+      summary: Subscribe to changes in bounding box
+      description: Subscribe to changes in bounding box
+      responses:
+        '200':
+          description: Successful response
+        '400':
+          description: Request is invalid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: ''
+              type: object
+              x-examples:
+                example-1:
+                  bbox:
+                    lat1: 42.27
+                    lng1: -7.97
+                    lat2: 52.58
+                    lng2: 38.25
+                  email: john.smith@example.com
+                  tags:
+                    - organic
+                    - non-profit
+                  frequency: day
+                  changeType: new
+              properties:
+                bbox:
+                  type: object
+                  required:
+                    - lat1
+                    - lng1
+                    - lat2
+                    - lng2
+                  description: ''
+                  properties:
+                    lat1:
+                      type: number
+                    lng1:
+                      type: number
+                    lat2:
+                      type: number
+                    lng2:
+                      type: number
+                email:
+                  type: string
+                  description: ''
+                  format: email
+                  minLength: 3
+                tags:
+                  type: array
+                  description: ''
+                  items:
+                    type: string
+                frequency:
+                  type: string
+                  enum:
+                    - hour
+                    - day
+                    - week
+                  description: ''
+                  default: hour
+                changeType:
+                  type: string
+                  enum:
+                    - new
+                    - all
+                  default: new
+              required:
+                - bbox
+                - email
+        description: |-
+          bbox: The bounding box to subscribe to
+
+          email: The email adress to send notifications to
+
+          tags: Only report for entries with the given tags
+
+          frequency: Report frequency
+          * **hour** = single email per entry, at most every hour
+          * **day** = daily digest
+          * **week** = weekly digest
+
+          changeType: What kind of changes to report
+          * **new** = report only new entries
+          * **all** = report new entries and updates to existing entries
+    parameters: []
+components:
+  schemas: {}
