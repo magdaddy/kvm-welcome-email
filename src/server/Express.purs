@@ -28,6 +28,7 @@ import WelcomeEmail.Server.Data (AppError(..))
 import WelcomeEmail.Server.LastLogs (loadLastLogs)
 import WelcomeEmail.Server.Log (LogLevel(..), log, logL)
 import WelcomeEmail.Server.Settings (loadSettings, saveSettings)
+import WelcomeEmail.Server.Subscription.Api (SubscribePayload, subscribe)
 import WelcomeEmail.Server.Template (loadTemplate, saveTemplate)
 import WelcomeEmail.Server.Util (getUsers, jwtSign, jwtVerify, tokenSecret)
 import WelcomeEmail.Server.Winston (morgan)
@@ -122,6 +123,13 @@ server stateRef = do
       result <- liftAff $ runExceptT $ loadLastLogs 300
       lastLogs <- except result
       lift $ send $ lastLogs
+
+  post "/api/subscribe" do
+    withErrorHandler defErrHandler do
+      pl :: SubscribePayload <- parseJsonReqBody
+      res <- subscribe pl
+      void $ except $ res
+      lift $ send unit
 
   use $ static "./dist"
 
