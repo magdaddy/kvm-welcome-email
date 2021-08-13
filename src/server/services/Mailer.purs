@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Mailer where
+module WelcomeEmail.Server.Services.Mailer where
 
 import Prelude
 
@@ -8,12 +8,12 @@ import Data.Show.Generic (genericShow)
 import Effect.Aff.Class (class MonadAff)
 
 
-data MailerError
-  = Other String
+data Error
+  = OtherError String
 
-derive instance Eq MailerError
-derive instance Generic MailerError _
-instance Show MailerError where show = genericShow
+derive instance Eq Error
+derive instance Generic Error _
+instance Show Error where show = genericShow
 
 type Email =
   { from :: String
@@ -23,10 +23,10 @@ type Email =
   }
 
 class Mailer mailer where
-  sendEmail :: forall m. MonadAff m => Email -> mailer -> m (Either MailerError Unit)
+  sendEmail :: forall m. MonadAff m => Email -> mailer -> m (Either Error Unit)
 
 
-newtype MockMailer = MockMailer (Either MailerError Unit)
+newtype MockMailer = MockMailer (Either Error Unit)
 
 instance Mailer MockMailer where
   sendEmail _ (MockMailer res) = pure res

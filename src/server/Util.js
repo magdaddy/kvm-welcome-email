@@ -20,6 +20,8 @@ const jwt = require('jsonwebtoken');
 exports.tokenSecret = tokenSecret;
 exports.jwtSign = payload => key => options => jwt.sign(payload, key, options);
 exports.jwtVerifyImpl = token => () => jwt.verify(token, tokenSecret);
+exports.jwtVerifySImpl = token => secret => () => jwt.verify(token, secret);
+exports.jwtDecode = token => jwt.decode(token);
 
 
 // turf
@@ -40,3 +42,5 @@ const toTurfPoint = ({ lat, lng }) => turf.point([lng, lat]);
 exports.isInAt = p => turf.booleanPointInPolygon(toTurfPoint(p), grenzenAt);
 exports.isInDe = p => turf.booleanPointInPolygon(toTurfPoint(p), grenzenDe);
 exports.isInCh = p => turf.booleanPointInPolygon(toTurfPoint(p), grenzenCh);
+
+exports.isInBBoxImpl = p => bbox => turf.booleanPointInPolygon(toTurfPoint(p), turf.bboxPolygon(bbox));

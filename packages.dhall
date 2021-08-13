@@ -149,32 +149,32 @@ in  upstream
         "https://github.com/magdaddy/purescript-nodemailer.git"
     , version = "v3.1.0"
     }
-  -- with maglibs = ../../purescript-maglibs/spago.dhall as Location
-  with maglibs =
-    { dependencies =
-        [ "aff"
-        , "console"
-        , "effect"
-        , "either"
-        , "exceptions"
-        , "foreign"
-        , "js-date"
-        , "maybe"
-        , "newtype"
-        , "node-http"
-        , "nullable"
-        , "prelude"
-        , "psci-support"
-        , "react-basic-hooks"
-        , "simple-json"
-        , "transformers"
-        , "typelevel-prelude"
-        , "variant"
-        ]
-    , repo =
-        "https://github.com/magdaddy/purescript-maglibs.git"
-    , version = "v0.0.2"
-    }
+  with maglibs = ../../purescript-maglibs/spago.dhall as Location
+  -- with maglibs =
+  --   { dependencies =
+  --       [ "aff"
+  --       , "console"
+  --       , "effect"
+  --       , "either"
+  --       , "exceptions"
+  --       , "foreign"
+  --       , "js-date"
+  --       , "maybe"
+  --       , "newtype"
+  --       , "node-http"
+  --       , "nullable"
+  --       , "prelude"
+  --       , "psci-support"
+  --       , "react-basic-hooks"
+  --       , "simple-json"
+  --       , "transformers"
+  --       , "typelevel-prelude"
+  --       , "variant"
+  --       ]
+  --   , repo =
+  --       "https://github.com/magdaddy/purescript-maglibs.git"
+  --   , version = "v0.0.2"
+  --   }
   with convertable-options =
     { dependencies =
         [ "console", "effect", "maybe", "record" ]

@@ -27,3 +27,7 @@ writeJSONPretty indent obj = stringifyPretty indent $ write obj
 genId :: forall m. MonadEffect m => m String
 genId = liftEffect genIdImpl
 foreign import genIdImpl :: Effect String
+
+genId16 :: forall m. MonadEffect m => m String
+genId16 = liftEffect genId16Impl
+foreign import genId16Impl :: Effect String

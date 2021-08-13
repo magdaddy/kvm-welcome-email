@@ -3,8 +3,10 @@ module WelcomeEmail.Server.Subscription.Entities where
 import Prelude
 
 import Data.Generic.Rep (class Generic)
+import Data.JSDate (JSDate)
 import Data.Show.Generic (genericShow)
 import Data.Tuple.Nested (type (/\))
+import WelcomeEmail.Server.Services.Ofdb (EntryChange)
 
 type Id = String
 
@@ -41,9 +43,16 @@ type Subscription =
   , frequency :: Frequency
   , changeType :: ChangeType
   , confirmed :: Boolean
+  , secret :: String
+  , lastSent :: JSDate
   }
 
 
-type ConfirmationLink = String
+type ConfirmationToken = String
 
-type UnsubscribeLink = String
+type UnsubscribeToken = String
+
+type SubscriptionAndDigest =
+  { sub :: Subscription
+  , digest :: Array EntryChange
+  }

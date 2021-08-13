@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Either (Either)
 import Data.Maybe (Maybe)
-import Effect.Aff (Aff)
+import Effect.Aff.Class (class MonadAff)
 
 
 data OfdbError
@@ -12,7 +12,7 @@ data OfdbError
 
 
 class Ofdb ofdb where
-  getRecentlyChanged :: ofdb -> Aff (Either OfdbError (Array Entry))
+  getRecentlyChanged :: forall m. MonadAff m => ofdb -> m (Either OfdbError (Array Entry))
 
 
 newtype MockOfdb = MockOfdb (Either OfdbError (Array Entry))
