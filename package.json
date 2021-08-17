@@ -5,7 +5,7 @@
   "author": "Magnus Herold",
   "scripts": {
     "build": "spago build",
-    "test": "spago test",
+    "test": "rm data/tmp/* ; spago test",
     "serve": "parcel dev/index.html",
     "css-build": "node-sass --omit-source-map-url dev/bulma-cfg.scss dev/bulma-cfg.css",
     "css-watch": "npm run css-build -- --watch",

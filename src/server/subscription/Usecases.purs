@@ -18,8 +18,9 @@ import WelcomeEmail.Server.Services.Jwt (Error) as Jwt
 import WelcomeEmail.Server.Services.Jwt (class Jwt)
 import WelcomeEmail.Server.Services.Mailer (Error, sendEmail) as Mailer
 import WelcomeEmail.Server.Services.Mailer (class Mailer)
-import WelcomeEmail.Server.Services.Ofdb (Error, getRecentlyChanged) as Ofdb
+import WelcomeEmail.Server.Services.Ofdb (Error, recentlyChanged) as Ofdb
 import WelcomeEmail.Server.Services.Ofdb (class Ofdb, EntryChange)
+import WelcomeEmail.Server.Subscription.EmailTemplates (confirmationMail, placeCreatedMail)
 import WelcomeEmail.Server.Subscription.Entities (BBox, ChangeType, ConfirmationToken, EmailAddr, Frequency(..), Id, Subscription, SubscriptionAndDigest, Tag, UnsubscribeToken)
 import WelcomeEmail.Server.Subscription.Repo (class Repo)
 import WelcomeEmail.Server.Subscription.Repo as Repo
@@ -41,27 +42,29 @@ instance Show SubscriptionError where show = genericShow
 
 subscribe :: forall m repo.
   MonadAff m => Repo repo =>
-  EmailAddr -> BBox -> Array Tag -> Frequency -> ChangeType -> repo -> m (Either Repo.Error Id)
+  EmailAddr -> BBox -> Array Tag -> Frequency -> ChangeType -> repo -> ExceptT Repo.Error m Id
 subscribe email bbox tags frequency changeType repo = do
   id <- genId16
   secret <- genId16
   let sub = { id, email, bbox, tags, frequency, changeType, confirmed: false, secret, lastSent: fromTime 0.0 }
-  void $ Repo.create sub repo
-  pure $ Right id
+  Repo.create sub repo
+  pure id
 
 unsubscribe :: forall m repo.
   MonadAff m => Repo repo =>
   UnsubscribeToken -> repo -> ExceptT SubscriptionError m Unit
 unsubscribe token repo = do
   sub <- verifyToken token repo >>= except
-  Repo.delete sub.id repo >>= withExceptT RepoError <<< except
+  Repo.delete sub.id repo # withExceptT RepoError
 
 sendConfirmationMail :: forall m mailer.
   MonadAff m => Mailer mailer =>
   Subscription -> mailer -> ExceptT SubscriptionError m ConfirmationToken
 sendConfirmationMail sub mailer = do
   let token = jwtSign {} sub.secret { subject: sub.id }
-  let email = { from: "from", to: [ sub.email ], subject: "subject", body: "body" }
+  let url = "http://localhost:4001/api/confirmSubscription?token=" <> token
+  let { subject, body } = confirmationMail url
+  let email = { from: "from", to: [ sub.email ], subject, body }
   _ <- Mailer.sendEmail email mailer >>= withExceptT MailerError <<< except
   pure $ token
 
@@ -70,14 +73,16 @@ confirmSubscription :: forall m repo.
   ConfirmationToken -> repo -> ExceptT SubscriptionError m Unit
 confirmSubscription token repo = do
   sub <- verifyToken token repo >>= except
-  Repo.update (sub { confirmed = true }) repo >>= withExceptT RepoError <<< except
+  Repo.update (sub { confirmed = true }) repo # withExceptT RepoError
 
 sendNotificationMail :: forall m mailer.
   MonadAff m => Mailer mailer =>
   Subscription -> Array EntryChange -> mailer -> ExceptT SubscriptionError m UnsubscribeToken
 sendNotificationMail sub _digest mailer = do
   let token = jwtSign {} sub.secret { subject: sub.id }
-  let email = { from: "from", to: [ sub.email ], subject: "subject", body: "body" }
+  let url = "http://localhost:4001/api/unsubscribe?token=" <> token
+  let { subject, body } = placeCreatedMail url
+  let email = { from: "from", to: [ sub.email ], subject, body }
   _ <- Mailer.sendEmail email mailer >>= withExceptT MailerError <<< except
   pure $ token
 
@@ -85,8 +90,8 @@ checkRecentlyChanged :: forall m ofdb repo.
   MonadAff m => Ofdb ofdb => Repo repo =>
   JSDate -> ofdb -> repo -> ExceptT SubscriptionError m (Array SubscriptionAndDigest)
 checkRecentlyChanged now ofdb repo = do
-  entries <- Ofdb.getRecentlyChanged ofdb >>= withExceptT OfdbError <<< except
-  allSubs <- Repo.getAll repo >>= withExceptT RepoError <<< except
+  entries <- Ofdb.recentlyChanged ofdb # withExceptT OfdbError
+  allSubs <- Repo.readAll repo # withExceptT RepoError
   let subs = A.filter (subscriptionShouldSendNotification now) allSubs
   let snds = map (\sub -> { digest: getDigest sub entries, sub }) subs
   pure $ A.filter (\snd -> not A.null snd.digest) snds
@@ -106,7 +111,7 @@ verifyToken token repo = runExceptT do
     sub <- readProp "sub" for
     readString sub
   id <- except $ lmap (OtherError <<< show) res
-  sub <- Repo.get id repo >>= withExceptT RepoError <<< except
+  sub <- Repo.read id repo # withExceptT RepoError
   _ <- jwtVerifyS token sub.secret # liftEffect >>= withExceptT OtherError <<< except
   pure sub
 

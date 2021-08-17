@@ -18,7 +18,7 @@ import Nmailer (sendTestMail)
 import Node.Express.App (App, get, listenHostHttp, post, use, useExternal)
 import Node.Express.Handler (Handler, HandlerM)
 import Node.Express.Middleware.Static (static)
-import Node.Express.Request (getBody', getRequestHeader)
+import Node.Express.Request (getBody', getQueryParam, getRequestHeader)
 import Node.Express.Response (send, setStatus)
 import Node.Express.Types (Middleware)
 import Node.HTTP (Server) as Http
@@ -28,7 +28,7 @@ import WelcomeEmail.Server.Data (AppError(..))
 import WelcomeEmail.Server.LastLogs (loadLastLogs)
 import WelcomeEmail.Server.Log (LogLevel(..), log, logL)
 import WelcomeEmail.Server.Settings (loadSettings, saveSettings)
-import WelcomeEmail.Server.Subscription.Api (SubscribePayload, subscribe)
+import WelcomeEmail.Server.Subscription.Api (SubscribePayload, confirm, subscribe)
 import WelcomeEmail.Server.Template (loadTemplate, saveTemplate)
 import WelcomeEmail.Server.Util (getUsers, jwtSign, jwtVerify, tokenSecret)
 import WelcomeEmail.Server.Winston (morgan)
@@ -124,12 +124,22 @@ server stateRef = do
       lastLogs <- except result
       lift $ send $ lastLogs
 
+  -- subscribe --
+
   post "/api/subscribe" do
     withErrorHandler defErrHandler do
       pl :: SubscribePayload <- parseJsonReqBody
-      res <- subscribe pl
-      void $ except $ res
+      subscribe pl >>= except
       lift $ send unit
+
+  get "/api/confirmSubscription" do
+    withErrorHandler defErrHandler do
+      mbToken <- lift $ getQueryParam "token"
+      token <- except $ note (OtherError "Token missing") mbToken
+      confirm token
+      lift $ send $ "Email confirmed, subscription active"
+
+  -- -- --
 
   use $ static "./dist"
 

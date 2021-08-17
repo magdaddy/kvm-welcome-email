@@ -10,16 +10,20 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Nmailer (NMailer(..))
 import Test.Data (rapunzelMitteLinks, subMitteLinks, subMitteRechts, subWest, urbanharbourWest, weltenkuecheWest)
 import Test.Spec (Spec, describe, describeOnly, it, itOnly)
 import Test.Spec.Assertions (fail, shouldEqual, shouldReturn, shouldSatisfy)
 import Test.Util (mkDate, resultShouldSatisfy, shouldNotThrow, shouldThrow)
+import WelcomeEmail.Server.Services.CrudRepo (FileRepo(..))
 import WelcomeEmail.Server.Services.Mailer (Error(..), MockMailer(..)) as Mailer
 import WelcomeEmail.Server.Services.Ofdb as Ofdb
+import WelcomeEmail.Server.Services.OfdbApi (OfdbApiRest(..), defaultRcQuery, getEntriesRecentlyChanged)
 import WelcomeEmail.Server.Subscription.Api (SubscribePayload, subscribeFlow)
 import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Subscription)
-import WelcomeEmail.Server.Subscription.Repo (create, get, mkMock, mockRepoContent) as Repo
+import WelcomeEmail.Server.Subscription.Repo as Repo
 import WelcomeEmail.Server.Subscription.Usecases as UC
+import WelcomeEmail.Shared.Util (genId16)
 
 
 
@@ -51,11 +55,23 @@ subscriptionSpec = do
     describe "Repo" do
       it "create works" do
         mockRepo <- Repo.mkMock []
-        void $ Repo.create exSubscription mockRepo
+        Repo.create exSubscription mockRepo # shouldNotThrow
         Repo.mockRepoContent mockRepo `shouldReturn` [exSubscription]
       it "get works" do
         mockRepo <- Repo.mkMock [exSubscription]
-        Repo.get exSubscription.id mockRepo `shouldReturn` Right exSubscription
+        (Repo.read exSubscription.id mockRepo # shouldNotThrow) `shouldReturn` exSubscription
+    describe "FileRepo" do
+      it "crud works" do
+        fn <- genId16 >>= pure <<< ("data/tmp/filerepo_" <> _) <<< (_ <> ".json")
+        let repo = FileRepo fn
+        let sub = exSubscription
+        Repo.create sub repo # shouldNotThrow
+        (Repo.readAll repo # shouldNotThrow) `shouldReturn` [ sub ]
+        (Repo.read sub.id repo # shouldNotThrow) `shouldReturn` sub
+        Repo.update (sub { email = "nana@gugu.org" }) repo # shouldNotThrow
+        (Repo.readAll repo # shouldNotThrow) `shouldReturn` [ sub { email = "nana@gugu.org" } ]
+        Repo.delete sub.id repo # shouldNotThrow
+        (Repo.readAll repo # shouldNotThrow) `shouldReturn` []
     describe "Flow" do
       -- it "subscribe works" do
       --   mockRepo <- mkMock []
@@ -107,4 +123,14 @@ subscriptionSpec = do
         UC.subscriptionShouldSendNotification now subWest `shouldEqual` true
         snds <- UC.checkRecentlyChanged now mockOfdb mockRepo # shouldNotThrow
         traverse_ (liftEffect <<< log <<< show) snds
+        let mailer = NMailer unit
+        traverse_ (\{ sub, digest } -> UC.sendNotificationMail sub digest mailer # shouldNotThrow) snds
+        pure unit
+    describeOnly "OfdbApi" do
+      it "ofdbapi" do
+        let api = OfdbApiRest { baseUrl: "https://api.ofdb.io/v0" }
+        -- let query = defaultRcQuery { since = Just $ mkDate 2021 8 13 12 0, withRatings = Just true }
+        let query = defaultRcQuery { withRatings = Just true }
+        entries <- getEntriesRecentlyChanged query api # shouldNotThrow
+        liftEffect $ log $ show entries
         pure unit

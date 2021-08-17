@@ -2,25 +2,19 @@ module WelcomeEmail.Server.Subscription.Repo where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT, except, runExceptT)
-import Data.Array as A
-import Data.Either (Either(..), note)
+import Control.Monad.Except (ExceptT, withExceptT)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (fromTime, getTime)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Show.Generic (genericShow)
-import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\))
-import Effect.Aff (try)
-import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Ref (Ref, modify_, new, read, write)
-import Node.Encoding (Encoding(..))
-import Node.FS.Aff (readTextFile, writeTextFile)
-import Simple.JSON (readJSON_)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class (class MonadEffect)
+import WelcomeEmail.Server.Services.CrudRepo (class CrudRepo, FileRepo(..))
+import WelcomeEmail.Server.Services.CrudRepo as CrudRepo
 import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Id, LatLng, Subscription)
-import WelcomeEmail.Shared.Util (writeJSONPretty)
 
 
 data Error
@@ -32,51 +26,33 @@ instance Show Error where show = genericShow
 
 
 class Repo repo where
-  get :: forall m. MonadAff m => Id -> repo -> m (Either Error Subscription)
-  getAll :: forall m. MonadAff m => repo -> m (Either Error (Array Subscription))
-  create :: forall m. MonadAff m => Subscription -> repo -> m (Either Error Unit)
-  update :: forall m. MonadAff m => Subscription -> repo -> m (Either Error Unit)
-  delete :: forall m. MonadAff m => Id -> repo -> m (Either Error Unit)
+  read :: forall m. MonadAff m =>
+    Id -> repo -> ExceptT Error m Subscription
+  readAll :: forall m. MonadAff m =>
+    repo -> ExceptT Error m (Array Subscription)
+  create :: forall m. MonadAff m =>
+    Subscription -> repo -> ExceptT Error m Unit
+  update :: forall m. MonadAff m =>
+    Subscription -> repo -> ExceptT Error m Unit
+  delete :: forall m. MonadAff m =>
+    Id -> repo -> ExceptT Error m Unit
 
 
-defaultFileRepo = FileRepo "subscriptions.json" :: FileRepo
+defaultFileRepo = FileRepo "data/subscriptions.json" :: FileRepo
 
-newtype FileRepo = FileRepo String
+instance CrudRepo.HasId NSub Id where
+  id (NSub sub) = sub.id
 
-loadSubscriptions :: forall m. MonadAff m => String -> ExceptT Error m (Array Subscription)
-loadSubscriptions fn = do
-  res <- liftAff $ try $ readTextFile UTF8 fn
-  let content = case res of
-                  Left _ -> "[]"
-                  Right c -> c
-  bsubs :: Array BoundarySubscription <- except $ note (OtherError "Subscriptions could not be loaded: json error") $ readJSON_ content
-  except $ note (OtherError "Subscriptions could not be loaded: from boundary error") $ traverse fromBoundarySubscription bsubs
+instance CrudRepo.SerDe NSub BoundarySubscription where
+  ser = toBoundarySubscription <<< unwrap
+  deSer = map wrap <<< fromBoundarySubscription
 
-saveSubscriptions :: forall m. MonadAff m => Array Subscription -> String -> ExceptT Error m Unit
-saveSubscriptions subs fn = do
-  liftAff $ writeTextFile UTF8 fn $ writeJSONPretty 2 $ map toBoundarySubscription subs
-  pure unit
-
-instance Repo FileRepo where
-  get id' (FileRepo fn) = runExceptT do
-    subs <- loadSubscriptions fn
-    sub <- except $ note (OtherError "Subscription not found") $ A.find (\{ id } -> id == id') subs
-    pure sub
-  getAll (FileRepo fn) = runExceptT do
-    loadSubscriptions fn
-  create sub (FileRepo fn) = runExceptT do
-    subs <- loadSubscriptions fn
-    saveSubscriptions (A.snoc subs sub) fn
-  update sub (FileRepo fn) = runExceptT do
-    subs <- loadSubscriptions fn
-    idx <- except $ note (OtherError "UpdateError: Subscription not found") $ A.findIndex (\{ id } -> id == sub.id) subs
-    newSubs <- except $ note (OtherError "UpdateError: Index out of bounds") $ A.updateAt idx sub subs
-    saveSubscriptions newSubs fn
-  delete id' (FileRepo fn) = runExceptT do
-    subs <- loadSubscriptions fn
-    idx <- except $ note (OtherError "DeleteError: Subscription not found") $ A.findIndex (\{ id } -> id == id') subs
-    newSubs <- except $ note (OtherError "DeleteError: Index out of bounds") $ A.deleteAt idx subs
-    saveSubscriptions newSubs fn
+instance CrudRepo FileRepo NSub Id => Repo FileRepo where
+  read id repo = CrudRepo.read id repo # withExceptT (OtherError <<< show) >>= pure <<< unwrap
+  readAll repo = CrudRepo.readAll repo # withExceptT (OtherError <<< show) >>= pure <<< map unwrap
+  create sub repo = CrudRepo.create (wrap sub) repo # withExceptT (OtherError <<< show)
+  update sub repo = CrudRepo.update (wrap sub) repo # withExceptT (OtherError <<< show)
+  delete id repo = CrudRepo.delete id repo # withExceptT (OtherError <<< show)
 
 type BoundarySubscription =
   { id :: String
@@ -89,6 +65,9 @@ type BoundarySubscription =
   , secret :: String
   , lastSent :: Number
   }
+
+newtype NSub = NSub Subscription
+derive instance Newtype NSub _
 
 fromBoundarySubscription :: BoundarySubscription -> Maybe Subscription
 fromBoundarySubscription { id, email, bbox, tags, frequency, changeType, confirmed, secret, lastSent } = do
@@ -136,32 +115,18 @@ toBoundaryChangeType = case _ of
   AllEntries -> "all"
 
 
-newtype Mock = Mock (Ref (Array Subscription))
+type Mock = CrudRepo.Mock NSub
 
 mkMock :: forall m. MonadEffect m => Array Subscription -> m Mock
-mkMock subs = liftEffect $ new subs >>= pure <<< Mock
+mkMock subs = CrudRepo.mkMock $ map wrap subs
 
 mockRepoContent :: forall m. MonadEffect m => Mock -> m (Array Subscription)
-mockRepoContent (Mock mockRepoRef) = liftEffect $ read mockRepoRef
+mockRepoContent crudMock = CrudRepo.mockRepoContent crudMock >>= pure <<< map unwrap
 
-instance Repo Mock where
-  get id' (Mock repoRef) = do
-    subs <- liftEffect $ read repoRef
-    pure $ note (OtherError "Subscription not found") $ A.find (\{ id } -> id == id') subs
-  getAll (Mock repoRef) = do
-    subs <- liftEffect $ read repoRef
-    pure $ Right subs
-  create sub (Mock repoRef) = do
-    liftEffect $ modify_ (flip A.snoc sub) repoRef
-    pure $ Right unit
-  update sub (Mock repoRef) = runExceptT do
-    subs <- liftEffect $ read repoRef
-    idx <- except $ note (OtherError "UpdateError: Subscription not found") $ A.findIndex (\{ id } -> id == sub.id) subs
-    newSubs <- except $ note (OtherError "UpdateError: Index out of bounds") $ A.updateAt idx sub subs
-    liftEffect $ write newSubs repoRef
-  delete id' (Mock repoRef) = runExceptT do
-    subs <- liftEffect $ read repoRef
-    idx <- except $ note (OtherError "DeleteError: Subscription not found") $ A.findIndex (\{ id } -> id == id') subs
-    newSubs <- except $ note (OtherError "DeleteError: Index out of bounds") $ A.deleteAt idx subs
-    liftEffect $ write newSubs repoRef
+instance Repo (CrudRepo.Mock NSub) where
+  read id repo = CrudRepo.read id repo # withExceptT (OtherError <<< show) >>= pure <<< unwrap
+  readAll repo = CrudRepo.readAll repo # withExceptT (OtherError <<< show) >>= pure <<< map unwrap
+  create sub repo = CrudRepo.create (wrap sub) repo # withExceptT (OtherError <<< show)
+  update sub repo = CrudRepo.update (wrap sub) repo # withExceptT (OtherError <<< show)
+  delete id repo = CrudRepo.delete id repo # withExceptT (OtherError <<< show)
 

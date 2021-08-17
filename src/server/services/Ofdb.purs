@@ -2,29 +2,38 @@ module WelcomeEmail.Server.Services.Ofdb where
 
 import Prelude
 
+import Control.Monad.Except (ExceptT, except, withExceptT)
 import Data.Either (Either)
 import Data.Generic.Rep (class Generic)
-import Data.Show.Generic (genericShow)
 import Data.JSDate (JSDate)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
+import Data.Show.Generic (genericShow)
 import Effect.Aff.Class (class MonadAff)
+import WelcomeEmail.Server.Services.OfdbApi (class OfdbApi, defaultRcQuery, getEntriesRecentlyChanged)
 
 
 data Error
-  = Other String
+  = OtherError String
 
 derive instance Eq Error
 derive instance Generic Error _
 instance Show Error where show = genericShow
 
 class Ofdb ofdb where
-  getRecentlyChanged :: forall m. MonadAff m => ofdb -> m (Either Error (Array EntryChange))
+  recentlyChanged :: forall m. MonadAff m => ofdb -> ExceptT Error m (Array EntryChange)
 
+
+updateFeed :: forall m ofdbApi.
+  MonadAff m => OfdbApi ofdbApi =>
+  ofdbApi -> ExceptT Error m Unit
+updateFeed ofdbApi = do
+  entries <- getEntriesRecentlyChanged defaultRcQuery { withRatings = Just true } ofdbApi # withExceptT (OtherError <<< show)
+  pure unit
 
 newtype Mock = Mock (Either Error (Array EntryChange))
 
 instance Ofdb Mock where
-  getRecentlyChanged (Mock res) = pure res
+  recentlyChanged (Mock res) = except res
 
 
 type EntryChange =
