@@ -1,6 +1,6 @@
 module Test.Turf where
 
-import Prelude
+import ThisPrelude
 
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)

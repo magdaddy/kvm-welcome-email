@@ -1,8 +1,7 @@
 module WelcomeEmail.App.SettingsPage where
 
-import Prelude
+import ThisPrelude
 
-import Effect (Effect)
 import React.Basic.DOM as R
 import React.Basic.Hooks (Component, component)
 import WelcomeEmail.App.Data (Page)

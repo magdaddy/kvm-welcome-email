@@ -1,12 +1,14 @@
 module WelcomeEmail.App.Data where
 
-import Prelude
+import ThisPrelude
 
 import Affjax as AX
+import Data.Array as A
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
+import Data.String as S
 import Effect.Exception as Exn
-import Foreign (MultipleErrors)
+import Foreign (MultipleErrors, renderForeignError)
 
 
 data Page
@@ -14,6 +16,7 @@ data Page
   | TemplatePage
   | SettingsPage
   | LoginPage
+  | RecentlyChangedPage
 
 derive instance Eq Page
 derive instance Generic Page _
@@ -31,7 +34,7 @@ data AppError
 instance Show AppError where
   show = case _ of
     HttpError err -> "AffjaxError: " <> AX.printError err
-    JsonError err -> "JsonError: " <> show err
+    JsonError err -> "JsonError: " <> (S.joinWith "\n" <<< A.fromFoldable <<< (map renderForeignError)) err
     JsError err -> "JsError: " <> Exn.message err
     ServerError err -> "ServerError: " <>  err
     Unauthorized err -> "Unauthorized: " <>  err

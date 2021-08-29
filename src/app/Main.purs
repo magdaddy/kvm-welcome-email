@@ -1,6 +1,6 @@
 module WelcomeEmail.App.Main where
 
-import Prelude
+import ThisPrelude
 
 import Data.Maybe (Maybe(..))
 import Effect (Effect)

@@ -1,12 +1,9 @@
 module WelcomeEmail.Server.SocketIo where
 
-import Prelude
+import ThisPrelude
 
-import Data.Maybe (Maybe(..), isJust)
-import Effect (Effect)
+import Data.Maybe (isJust)
 import Effect.Aff (error, forkAff, killFiber, launchAff_)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import MagLibs.SocketIo.Message (serverEmit, serverOn)

@@ -1,15 +1,11 @@
 module WelcomeEmail.App.StatusPage where
 
-import Prelude
+import ThisPrelude
 
 import Control.Monad.Except (runExceptT)
 import Data.Bifunctor (rmap)
-import Data.Either (Either(..))
 import Data.Tuple.Nested ((/\))
-import Effect (Effect)
 import Effect.Aff (launchAff_)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
 import MagLibs.DateFns (format)
 import Network.RemoteData (RemoteData(..), fromEither, toMaybe)
 import React.Basic.DOM (css)

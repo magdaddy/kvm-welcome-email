@@ -1,11 +1,9 @@
 module WelcomeEmail.Server.Services.Mailer where
 
-import Prelude
+import ThisPrelude
 
-import Data.Either (Either)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
-import Effect.Aff.Class (class MonadAff)
 
 
 data Error

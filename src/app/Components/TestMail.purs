@@ -1,13 +1,11 @@
 module WelcomeEmail.App.TestMail where
 
-import Prelude
+import ThisPrelude
 
 import Control.Monad.Except (runExceptT)
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (launchAff_)
-import Effect.Class (liftEffect)
 import Network.RemoteData (RemoteData(..))
 import React.Basic.DOM as R
 import React.Basic.DOM.Events (targetValue)

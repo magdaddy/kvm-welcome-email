@@ -1,6 +1,6 @@
 module WelcomeEmail.Server.Data where
 
-import Prelude
+import ThisPrelude
 
 import Affjax as AX
 import Effect.Exception as Exn

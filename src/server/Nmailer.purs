@@ -1,13 +1,9 @@
 module Nmailer where
 
-import Prelude
+import ThisPrelude
 
 import Data.Bifunctor (lmap)
-import Data.Either (Either)
-import Data.Maybe (Maybe(..))
-import Effect.Aff (Aff, try)
-import Effect.Aff.Class (liftAff)
-import Effect.Class (liftEffect)
+import Effect.Aff (try)
 import NodeMailer (TransportConfig, Message, createTransporter, sendMail)
 import Record as R
 import Type.Proxy (Proxy(..))

@@ -1,11 +1,9 @@
 module WelcomeEmail.Server.Services.Jwt where
 
-import Prelude
+import ThisPrelude
 
-import Data.Either (Either)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
-import Effect.Class (class MonadEffect)
 
 
 data Error

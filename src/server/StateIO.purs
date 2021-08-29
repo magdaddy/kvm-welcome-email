@@ -1,14 +1,10 @@
 module StateIO (loadState, saveState) where
 
-import Prelude
+import ThisPrelude
 
 import Data.Bifunctor (lmap)
 import Data.DateTime.Instant (Instant, instant, unInstant)
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
 import Data.Time.Duration (Seconds(..), convertDuration)
-import Effect (Effect)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (exists, readTextFile, writeTextFile)
 import Record (modify)

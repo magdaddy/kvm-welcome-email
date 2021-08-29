@@ -1,12 +1,9 @@
 module WelcomeEmail.Server.Template where
 
-import Prelude
+import ThisPrelude hiding (log)
 
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import Data.String (Pattern(..), drop, indexOf, joinWith, splitAt)
-import Effect (Effect)
+import Data.String as S
 import Effect.Exception (try)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (readTextFile, writeTextFile)
@@ -34,10 +31,10 @@ loadTemplate = do
 saveTemplate :: EmailTemplate -> Effect Unit
 saveTemplate (EmailTemplate templ) = do
   let filename = templateFn
-  let content = joinWith "\n" [templ.subject, templ.body]
+  let content = S.joinWith "\n" [templ.subject, templ.body]
   writeTextFile UTF8 filename content
 
 parseEmail :: String -> Either AppError Email
-parseEmail str = case indexOf (Pattern "\n") str of
+parseEmail str = case S.indexOf (S.Pattern "\n") str of
   Nothing -> Left $ OtherError "Email parsing failed"
-  Just i -> let { before, after } = splitAt i str in Right { subject: before, body: drop 1 after }
+  Just i -> let { before, after } = S.splitAt i str in Right { subject: before, body: S.drop 1 after }

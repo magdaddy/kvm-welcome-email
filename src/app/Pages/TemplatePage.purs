@@ -1,16 +1,12 @@
 module WelcomeEmail.App.TemplatePage where
 
-import Prelude
+import ThisPrelude
 
 import Control.Monad.Except (runExceptT)
-import Data.Either (Either(..))
 import Data.Lens (set, view)
 import Data.Maybe (fromMaybe)
 import Data.Tuple.Nested ((/\))
-import Effect (Effect)
 import Effect.Aff (launchAff_)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
 import Effect.Exception (throw)
 import Network.RemoteData (RemoteData(..), fromEither)
 import React.Basic.DOM as R

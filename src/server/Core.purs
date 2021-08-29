@@ -1,15 +1,12 @@
 module WelcomeEmail.Server.Core where
 
-import Prelude
+import ThisPrelude
 
-import Data.Array (filter)
-import Data.Either (Either(..))
+import Data.Array as A
 import Data.Foldable (traverse_)
-import Data.Maybe (Maybe(..))
 import Data.Time.Duration (Hours(..), convertDuration)
 import Data.Tuple (Tuple(..))
-import Effect.Aff (Aff, delay)
-import Effect.Class (liftEffect)
+import Effect.Aff (delay)
 import Effect.Now (now)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
@@ -63,7 +60,7 @@ theloop stateRef = do
       delay $ convertDuration $ Hours 1.0
       theloop stateRef
     Right entries -> do
-      let newEntries = filter (\e -> e.version == 0 && isInDach e) entries
+      let newEntries = A.filter (\e -> e.version == 0 && isInDach e) entries
       -- liftEffect $ printEntries entries
       sendEmails newEntries
       newState <- liftEffect $ Ref.modify _ { saved { latestInstant = Just until } } stateRef

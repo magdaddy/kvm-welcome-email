@@ -1,12 +1,12 @@
 module WelcomeEmail.Server.LastLogs where
 
-import Prelude
+import ThisPrelude
 
-import Control.Monad.Except (ExceptT, except, lift)
+import Control.Monad.Except (lift)
 import Data.Array (dropEnd, takeEnd)
 import Data.Bifunctor (lmap)
 import Data.String (Pattern(..), joinWith, split)
-import Effect.Aff (Aff, try)
+import Effect.Aff (try)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile)
 import WelcomeEmail.Server.Data (AppError(..))

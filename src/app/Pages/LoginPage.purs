@@ -1,14 +1,11 @@
 module WelcomeEmail.App.LoginPage where
 
-import Prelude
+import ThisPrelude
 
 import Control.Monad.Except (runExceptT)
-import Data.Either (Either(..))
 import Data.Maybe (fromMaybe)
 import Data.Tuple.Nested ((/\))
-import Effect (Effect)
 import Effect.Aff (launchAff_)
-import Effect.Class (liftEffect)
 import React.Basic.DOM as R
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler, handler_)

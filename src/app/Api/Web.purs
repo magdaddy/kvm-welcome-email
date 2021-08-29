@@ -1,10 +1,8 @@
 module WelcomeEmail.App.Api.Web where
 
-import Prelude
+import ThisPrelude
 
 import Data.Either (hush)
-import Data.Maybe (Maybe)
-import Effect (Effect)
 import Simple.JSON (read)
 import Web.HTML (window)
 import Web.HTML.Window (localStorage)

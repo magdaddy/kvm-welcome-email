@@ -1,8 +1,7 @@
 module WelcomeEmail.Server.Winston where
 
-import Prelude
+import ThisPrelude
 
-import Effect (Effect)
 import Node.Express.Types (Middleware)
 
 type Info r = { level :: String, message :: String | r }
