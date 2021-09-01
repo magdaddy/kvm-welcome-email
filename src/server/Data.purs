@@ -3,8 +3,10 @@ module WelcomeEmail.Server.Data where
 import ThisPrelude
 
 import Affjax as AX
+import Data.Array as A
+import Data.String as S
 import Effect.Exception as Exn
-import Foreign (MultipleErrors)
+import Foreign (MultipleErrors, renderForeignError)
 
 
 data AppError
@@ -13,13 +15,15 @@ data AppError
   | JsError Exn.Error
   | NodeMailerError Exn.Error
   | Unauthorized String
+  | InvalidInput String
   | OtherError String
 
 instance showAppError :: Show AppError where
   show = case _ of
     HttpError err -> "AffjaxError: " <> AX.printError err
-    JsonError err -> "JsonError: " <> show err
+    JsonError err -> "JsonError: " <> (S.joinWith "\n" <<< A.fromFoldable <<< (map renderForeignError)) err
     JsError err -> "JsError: " <> Exn.message err
     NodeMailerError err -> "NodeMailerError: " <> Exn.message err
     Unauthorized err -> "Unauthorized: " <> err
+    InvalidInput err -> "Invalid input: " <> err
     OtherError err -> "OtherError: " <> err

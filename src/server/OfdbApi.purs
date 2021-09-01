@@ -1,29 +1,26 @@
 module WelcomeEmail.Server.OfdbApi where
 
-import Prelude
+import ThisPrelude
 
 import Affjax as AX
 import Affjax.ResponseFormat as ResponseFormat
-import Data.Array (filter)
-import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
-import Data.String (joinWith, null)
+import Data.Array as A
+import Data.Bifunctor (lmap, rmap)
+import Data.String as S
 import Data.Tuple (Tuple, fst, snd)
-import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
 import Simple.JSON (readJSON)
 import WelcomeEmail.Server.Log (LogLevel(..), logL)
-import WelcomeEmail.Shared.Entry (Entry)
+import WelcomeEmail.Shared.Entry (Entry, fromBEntry)
 
 
 type Query
   = Array (Tuple String String)
 
 makeQueryStr :: Query -> String
-makeQueryStr query = joinWith "&" $ map (\x -> fst x <> "=" <> snd x) query
+makeQueryStr query = S.joinWith "&" $ map (\x -> fst x <> "=" <> snd x) query
 
 makeUrl :: String -> Query -> String
-makeUrl base query = joinWith "?" $ filter (not null) [ base, makeQueryStr query ]
+makeUrl base query = S.joinWith "?" $ A.filter (not S.null) [ base, makeQueryStr query ]
 
 getRecentlyChanged :: Query -> Aff (Either String (Array Entry))
 getRecentlyChanged query = do
@@ -33,7 +30,7 @@ getRecentlyChanged query = do
     Left err -> pure $ Left ("GET failed: " <> (AX.printError err))
     Right response -> do
       -- liftEffect $ logL Verbose $ show response.body
-      pure $ lmap show $ readJSON $ response.body
+      pure $ lmap show $ rmap (map fromBEntry) $ readJSON $ response.body
   where
   url = makeUrl "https://api.ofdb.io/v0/entries/recently-changed" query
 

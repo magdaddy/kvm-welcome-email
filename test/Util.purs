@@ -1,10 +1,9 @@
 module Test.Util where
 
-import Prelude
+import ThisPrelude
 
 import Control.Monad.Error.Class (class MonadThrow, throwError)
-import Control.Monad.Except (ExceptT, runExceptT)
-import Data.Either (Either(..))
+import Control.Monad.Except (runExceptT)
 import Data.Int (toNumber)
 import Data.JSDate (JSDate, jsdate)
 import Effect.Exception (Error, error)
@@ -33,7 +32,7 @@ shouldThrow m = do
 mkDate :: Int -> Int -> Int -> Int -> Int -> JSDate
 mkDate year month day hour minute = jsdate
   { year: toNumber year
-  , month: toNumber month
+  , month: toNumber $ month - 1
   , day: toNumber day
   , hour: toNumber hour
   , minute: toNumber minute

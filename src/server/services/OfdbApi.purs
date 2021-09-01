@@ -1,27 +1,22 @@
 module WelcomeEmail.Server.Services.OfdbApi where
 
-import Prelude
+import ThisPrelude
 
 import Affjax as AX
 import Affjax.ResponseFormat as ResponseFormat
-import Control.Monad.Except (ExceptT, except, withExceptT)
 import Data.Array as A
 import Data.Bifunctor (rmap)
-import Data.Either (Either)
 import Data.Generic.Rep (class Generic)
-import Data.JSDate (JSDate, fromTime)
-import Data.Maybe (Maybe(..))
+import Data.JSDate (JSDate)
 import Data.Show.Generic (genericShow)
 import Data.String as S
 import Data.Tuple.Nested (type (/\), (/\))
-import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Foreign (renderForeignError)
 import MagLibs.DateFns as DFN
 import Simple.JSON (readJSON)
-import WelcomeEmail.Server.Core.Entities (Entry)
 import WelcomeEmail.Server.OfdbApi (makeQueryStr)
+import WelcomeEmail.Shared.Entry (Entry, fromBEntry)
 
 
 data Error
@@ -81,62 +76,9 @@ defaultRcQuery =
 rcQueryKeys =
   [ "since" /\ map (DFN.format "t") <<< _.since
   , "until" /\ map (DFN.format "t") <<< _.until
-  , "withRatings" /\ map show <<< _.withRatings
+  , "with_ratings" /\ map show <<< _.withRatings
   , "limit" /\ map show <<< _.limit
   , "offset" /\ map show <<< _.offset
   ] :: Array (String /\ (RcQuery -> Maybe String))
 
-type BEntry
-  = { id :: String
-    , created :: Number
-    , version :: Int
-    , title :: String
-    , description :: String
-    , lat :: Number
-    , lng :: Number
-    , street :: Maybe String
-    , zip :: Maybe String
-    , city :: Maybe String
-    , country :: Maybe String
-    , state :: Maybe String
-    , contact_name :: Maybe String
-    , email :: Maybe String
-    , telephone :: Maybe String
-    , homepage :: Maybe String
-    , opening_hours :: Maybe String
-    -- , founded_on
-    , categories :: Array String
-    }
 
-fromBEntry :: BEntry -> Entry
-fromBEntry
-  { id
-  , created
-  , version
-  , title
-  -- , description
-  , lat
-  , lng
-  -- , street
-  -- , zip
-  -- , city
-  , country
-  -- , state
-  , contact_name
-  , email
-  -- , telephone
-  -- , homepage
-  -- , opening_hours
-  -- , founded_on
-  -- , categories
-  } =
-  { id
-  , created: fromTime created
-  , version
-  , title
-  , contactName: contact_name
-  , email
-  , country
-  , lat
-  , lng
-  }

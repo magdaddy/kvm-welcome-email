@@ -1,6 +1,6 @@
 module WelcomeEmail.App.App where
 
-import Prelude
+import ThisPrelude
 
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
@@ -12,6 +12,7 @@ import React.Basic.Hooks as React
 import WelcomeEmail.App.Api.Web (removeTokenFromLocalStorage)
 import WelcomeEmail.App.Data (Page(..))
 import WelcomeEmail.App.LoginPage (mkLoginPage)
+import WelcomeEmail.App.RecentlyChangedPage (mkRecentlyChangedPage)
 import WelcomeEmail.App.SettingsPage (mkSettingsPage)
 import WelcomeEmail.App.StatusPage (mkStatusPage)
 import WelcomeEmail.App.TemplatePage (mkTemplatePage)
@@ -27,6 +28,7 @@ mkApp = do
   templatePage <- mkTemplatePage
   settingsPage <- mkSettingsPage
   loginPage <- mkLoginPage
+  recentlyChangedPage <- mkRecentlyChangedPage
   component "App" \_ -> React.do
     (page :: Page) /\ setPage <- useState' gPage
     useEffectOnce do
@@ -41,6 +43,7 @@ mkApp = do
               TemplatePage -> templatePage { setPage, defaultEntry: defaultSettings.defaultEntry }
               SettingsPage -> settingsPage { setPage }
               LoginPage -> loginPage { setPage }
+              RecentlyChangedPage -> recentlyChangedPage { setPage }
           ]
         }
 
@@ -93,6 +96,11 @@ mkBulmaNavbar = do
                           { className: "navbar-item"
                           , children: [ R.text "Settings" ]
                           , onClick: handler_ $ props.setPage SettingsPage
+                          }
+                      , R.a
+                          { className: "navbar-item"
+                          , children: [ R.text "RecentlyChanged" ]
+                          , onClick: handler_ $ props.setPage RecentlyChangedPage
                           }
                       , R.a
                           { className: "navbar-item"

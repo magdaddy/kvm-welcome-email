@@ -1,15 +1,15 @@
 module Main where
 
-import Prelude
+import ThisPrelude
 
-import Data.Maybe (Maybe(..))
-import Effect (Effect)
 import Effect.Console (error)
 import Effect.Ref as Ref
 import Node.Process (exit)
 import StateIO (loadState)
 import WelcomeEmail.Server.Express (runServer)
-import WelcomeEmail.Server.Util (dotenvConfig, getHost, getNodeEnv, getPort, getUsers, isOther, unwrapOrExit, unwrapOrExitMb)
+import WelcomeEmail.Server.Services.RecentlyChanged (runRecentlyChangedService)
+import WelcomeEmail.Server.Subscription.Usecases (runSubscriptionNotificationService)
+import WelcomeEmail.Server.Util (dotenvConfig, getApiBaseUrl, getHost, getNodeEnv, getPort, getUsers, isOther, unwrapOrExit, unwrapOrExitMb)
 
 main :: Effect Unit
 main = do
@@ -26,6 +26,12 @@ main = do
   _users <- getUsers >>= unwrapOrExit "Users could not be loaded"
   savedState <- loadState >>= unwrapOrExit "Saved state could not be loaded"
   stateRef <- Ref.new { running: Nothing, saved: savedState }
-  void $ runServer host port stateRef
+  apiBaseUrl <- getApiBaseUrl >>= unwrapOrExitMb
+    "API_BASE_URL is not set. Please set it in .env or on the command line."
+
+  runRecentlyChangedService
+  runSubscriptionNotificationService apiBaseUrl
+  _ <- runServer host port stateRef { apiBaseUrl }
   -- runSocketIo httpServer stateRef
+  pure unit
 

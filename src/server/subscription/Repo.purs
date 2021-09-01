@@ -1,24 +1,18 @@
 module WelcomeEmail.Server.Subscription.Repo where
 
-import Prelude
+import ThisPrelude
 
-import Control.Monad.Except (ExceptT, withExceptT)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (fromTime, getTime)
-import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Show.Generic (genericShow)
-import Data.Tuple (fst, snd)
-import Data.Tuple.Nested ((/\))
-import Effect.Aff.Class (class MonadAff)
-import Effect.Class (class MonadEffect)
 import WelcomeEmail.Server.Services.CrudRepo (class CrudRepo, FileRepo(..))
 import WelcomeEmail.Server.Services.CrudRepo as CrudRepo
-import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Id, LatLng, Subscription)
-
+import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Id, Lang(..), LatLng, Subscription, mkBBox, northEast, southWest)
+import WelcomeEmail.Shared.Boundary (class SerDe)
 
 data Error
   = OtherError String
+  | NotFoundError
 
 derive instance Eq Error
 derive instance Generic Error _
@@ -43,51 +37,66 @@ defaultFileRepo = FileRepo "data/subscriptions.json" :: FileRepo
 instance CrudRepo.HasId NSub Id where
   id (NSub sub) = sub.id
 
-instance CrudRepo.SerDe NSub BoundarySubscription where
+instance SerDe NSub BoundarySubscription where
   ser = toBoundarySubscription <<< unwrap
   deSer = map wrap <<< fromBoundarySubscription
 
 instance CrudRepo FileRepo NSub Id => Repo FileRepo where
-  read id repo = CrudRepo.read id repo # withExceptT (OtherError <<< show) >>= pure <<< unwrap
-  readAll repo = CrudRepo.readAll repo # withExceptT (OtherError <<< show) >>= pure <<< map unwrap
-  create sub repo = CrudRepo.create (wrap sub) repo # withExceptT (OtherError <<< show)
-  update sub repo = CrudRepo.update (wrap sub) repo # withExceptT (OtherError <<< show)
-  delete id repo = CrudRepo.delete id repo # withExceptT (OtherError <<< show)
+  read id repo = CrudRepo.read id repo # withExceptT fromCrudRepoError >>= pure <<< unwrap
+  readAll repo = CrudRepo.readAll repo # withExceptT fromCrudRepoError >>= pure <<< map unwrap
+  create sub repo = CrudRepo.create (wrap sub) repo # withExceptT fromCrudRepoError
+  update sub repo = CrudRepo.update (wrap sub) repo # withExceptT fromCrudRepoError
+  delete id repo = CrudRepo.delete id repo # withExceptT fromCrudRepoError
+
+fromCrudRepoError :: CrudRepo.Error -> Error
+fromCrudRepoError CrudRepo.NotFoundError = NotFoundError
+fromCrudRepoError e = OtherError $ show e
 
 type BoundarySubscription =
   { id :: String
+  , title :: String
   , email :: String
-  , bbox :: { a :: LatLng, b :: LatLng }
+  , lang :: String
+  , bbox :: { sw :: LatLng, ne :: LatLng }
   , tags :: Array String
   , frequency :: String
   , changeType :: String
   , confirmed :: Boolean
   , secret :: String
   , lastSent :: Number
+  , created :: Number
   }
 
 newtype NSub = NSub Subscription
 derive instance Newtype NSub _
 
 fromBoundarySubscription :: BoundarySubscription -> Maybe Subscription
-fromBoundarySubscription { id, email, bbox, tags, frequency, changeType, confirmed, secret, lastSent } = do
-  let bbox' = bbox.a /\ bbox.b
+fromBoundarySubscription { id, title, email, lang, bbox, tags, frequency, changeType, confirmed, secret, lastSent, created } = do
+  let bbox' = mkBBox bbox.sw bbox.ne
+  lang' <- fromBoundaryLang lang
   frequency' <- fromBoundaryFrequency frequency
   changeType' <- fromBoundaryChangeType changeType
   let lastSent' = fromTime lastSent
-  pure { id, email, bbox: bbox', tags, frequency: frequency', changeType: changeType', confirmed, secret, lastSent: lastSent' }
+  let created' = fromTime created
+  pure
+    { id, title, email, lang: lang', bbox: bbox', tags, frequency: frequency'
+    , changeType: changeType', confirmed, secret, lastSent: lastSent', created: created'
+    }
 
 toBoundarySubscription :: Subscription -> BoundarySubscription
-toBoundarySubscription { id, email, bbox, tags, frequency, changeType, confirmed, secret, lastSent } =
+toBoundarySubscription { id, title, email, lang, bbox, tags, frequency, changeType, confirmed, secret, lastSent, created } =
   { id
+  , title
   , email
-  , bbox: { a: fst bbox, b: snd bbox }
+  , lang: toBoundaryLang lang
+  , bbox: { sw: southWest bbox, ne: northEast bbox }
   , tags
   , frequency: toBoundaryFrequency frequency
   , changeType: toBoundaryChangeType changeType
   , confirmed
   , secret
   , lastSent: getTime lastSent
+  , created: getTime created
   }
 
 fromBoundaryFrequency :: String -> Maybe Frequency
@@ -114,6 +123,17 @@ toBoundaryChangeType = case _ of
   NewEntries -> "new"
   AllEntries -> "all"
 
+fromBoundaryLang :: String -> Maybe Lang
+fromBoundaryLang = case _ of
+  "de" -> Just DE
+  "en" -> Just EN
+  _ -> Nothing
+
+toBoundaryLang :: Lang -> String
+toBoundaryLang = case _ of
+  DE -> "de"
+  EN -> "en"
+
 
 type Mock = CrudRepo.Mock NSub
 
@@ -124,9 +144,9 @@ mockRepoContent :: forall m. MonadEffect m => Mock -> m (Array Subscription)
 mockRepoContent crudMock = CrudRepo.mockRepoContent crudMock >>= pure <<< map unwrap
 
 instance Repo (CrudRepo.Mock NSub) where
-  read id repo = CrudRepo.read id repo # withExceptT (OtherError <<< show) >>= pure <<< unwrap
-  readAll repo = CrudRepo.readAll repo # withExceptT (OtherError <<< show) >>= pure <<< map unwrap
-  create sub repo = CrudRepo.create (wrap sub) repo # withExceptT (OtherError <<< show)
-  update sub repo = CrudRepo.update (wrap sub) repo # withExceptT (OtherError <<< show)
-  delete id repo = CrudRepo.delete id repo # withExceptT (OtherError <<< show)
+  read id repo = CrudRepo.read id repo # withExceptT fromCrudRepoError >>= pure <<< unwrap
+  readAll repo = CrudRepo.readAll repo # withExceptT fromCrudRepoError >>= pure <<< map unwrap
+  create sub repo = CrudRepo.create (wrap sub) repo # withExceptT fromCrudRepoError
+  update sub repo = CrudRepo.update (wrap sub) repo # withExceptT fromCrudRepoError
+  delete id repo = CrudRepo.delete id repo # withExceptT fromCrudRepoError
 

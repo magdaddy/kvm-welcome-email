@@ -1,10 +1,8 @@
 module WelcomeEmail.Shared.Util where
 
-import Prelude
+import ThisPrelude
 
-import Data.Either (Either(..))
-import Effect (Effect)
-import Effect.Class (class MonadEffect, liftEffect)
+import Control.Monad.Except (runExceptT)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Foreign (Foreign)
 import Partial.Unsafe (unsafeCrashWith)
@@ -31,3 +29,15 @@ foreign import genIdImpl :: Effect String
 genId16 :: forall m. MonadEffect m => m String
 genId16 = liftEffect genId16Impl
 foreign import genId16Impl :: Effect String
+
+repeatMA :: forall m. MonadAff m => Int -> m Unit -> m Unit
+repeatMA i loop
+  | i > 0 = loop *> repeatMA (i - 1) loop
+  | otherwise = pure unit
+
+logExceptConsole :: forall e m. MonadEffect m => Show e => ExceptT e m Unit -> m Unit
+logExceptConsole ex = do
+  res <- runExceptT ex
+  case res of
+    Left err -> log $ show err
+    Right _ -> pure unit

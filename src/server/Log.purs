@@ -1,13 +1,12 @@
 module WelcomeEmail.Server.Log where
 
-import Prelude
+import ThisPrelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
-import Effect (Effect)
 import Simple.JSON (write)
 import WelcomeEmail.Server.Winston as W
-import WelcomeEmail.Shared.Entry (Entry)
+import WelcomeEmail.Shared.Entry (Entry, toBEntry)
 
 data LogLevel
   = Error
@@ -24,16 +23,16 @@ instance showLogLevel :: Show LogLevel where
   show = genericShow
 
 
-log :: String -> Effect Unit
+log :: forall m. MonadEffect m => String -> m Unit
 log str = logL Info str
 
-logL :: LogLevel -> String -> Effect Unit
+logL :: forall m. MonadEffect m => LogLevel -> String -> m Unit
 -- logL level str = C.log $ (show level) <> ": " <> str
-logL level str = W.log { level: winstonLevel level, message: str }
+logL level str = liftEffect $ W.log { level: winstonLevel level, message: str }
 
 
-logSent :: Entry -> Boolean -> Effect Unit
-logSent entry wasSent = W.log { level, message, wasSent, entry: write entry }
+logSent :: forall m. MonadEffect m => Entry -> Boolean -> m Unit
+logSent entry wasSent = liftEffect $ W.log { level, message, wasSent, entry: write $ toBEntry entry }
   where
   level = winstonLevel Info
   message

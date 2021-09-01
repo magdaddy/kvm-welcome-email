@@ -1,28 +1,26 @@
 module WelcomeEmail.Server.Services.CrudRepo where
 
-import Prelude
+import ThisPrelude
 
-import Control.Monad.Except (ExceptT, except)
 import Data.Array as A
-import Data.Either (Either(..), note)
+import Data.Either (note)
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe)
 import Data.Show.Generic (genericShow)
 import Data.Traversable (traverse)
 import Effect.Aff (try)
-import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, writeTextFile)
-import Simple.JSON (class ReadForeign, class WriteForeign, readJSON_)
+import Simple.JSON (readJSON_)
+import WelcomeEmail.Shared.Boundary (class SerDe, deSer, ser)
 import WelcomeEmail.Shared.Util (writeJSONPretty)
 
 
 data Error
   = OtherError String
   | NotFoundError
+  | ImpossibleError String
 
 derive instance Eq Error
 derive instance Generic Error _
@@ -44,10 +42,6 @@ class CrudRepo repo item id | repo -> item, item -> id where
   delete :: forall m. MonadAff m =>
     id -> repo -> ExceptT Error m Unit
 
-
-class (ReadForeign bItem, WriteForeign bItem) <= SerDe item bItem | item -> bItem where
-  ser :: item -> bItem
-  deSer :: bItem -> Maybe item
 
 newtype FileRepo = FileRepo String
 
@@ -82,12 +76,12 @@ instance (HasId item id, SerDe item bItem) => CrudRepo (FileRepo) item id where
   update item (FileRepo fn) = do
     items <- loadItems fn
     idx <- except $ note NotFoundError $ A.findIndex (\item' -> id item' == id item) items
-    newSubs <- except $ note (OtherError "UpdateError: Index out of bounds") $ A.updateAt idx item items
+    newSubs <- except $ note (ImpossibleError "Update: Index out of bounds") $ A.updateAt idx item items
     saveItems newSubs fn
   delete id' (FileRepo fn) = do
     items :: Array item <- loadItems fn
     idx <- except $ note NotFoundError $ A.findIndex (\item -> id item == id') items
-    newSubs <- except $ note (OtherError "DeleteError: Index out of bounds") $ A.deleteAt idx items
+    newSubs <- except $ note (ImpossibleError "Delete: Index out of bounds") $ A.deleteAt idx items
     saveItems newSubs fn
 
 
@@ -112,11 +106,11 @@ instance HasId item id => CrudRepo (Mock item) item id where
   update item (Mock repoRef) = do
     items <- liftEffect $ Ref.read repoRef
     idx <- except $ note NotFoundError $ A.findIndex (\item' -> id item' == id item) items
-    newSubs <- except $ note (OtherError "UpdateError: Index out of bounds") $ A.updateAt idx item items
+    newSubs <- except $ note (ImpossibleError "Update: Index out of bounds") $ A.updateAt idx item items
     liftEffect $ Ref.write newSubs repoRef
   delete id' (Mock repoRef) = do
     items <- liftEffect $ Ref.read repoRef
     idx <- except $ note NotFoundError $ A.findIndex (\item -> id item == id') items
-    newSubs <- except $ note (OtherError "DeleteError: Index out of bounds") $ A.deleteAt idx items
+    newSubs <- except $ note (ImpossibleError "Delete: Index out of bounds") $ A.deleteAt idx items
     liftEffect $ Ref.write newSubs repoRef
 

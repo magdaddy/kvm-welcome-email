@@ -16,8 +16,8 @@ prod/
 
 .env
 /*.log
+/data/
 /state.json
 /settings.json
 /template.txt
 /server.js
-/subscriptions.json

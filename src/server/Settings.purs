@@ -1,17 +1,15 @@
 module WelcomeEmail.Server.Settings where
 
-import Prelude
+import ThisPrelude hiding (log)
 
-import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
-import Effect (Effect)
+import Data.Bifunctor (lmap, rmap)
 import Effect.Exception (try)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (readTextFile, writeTextFile)
 import Simple.JSON (readJSON)
 import WelcomeEmail.Server.Data (AppError(..))
 import WelcomeEmail.Server.Log (log)
-import WelcomeEmail.Shared.Boundary (Settings, defaultSettings)
+import WelcomeEmail.Shared.Boundary (Settings, defaultSettings, fromOldBSettings, toBSettings)
 import WelcomeEmail.Shared.Util (writeJSONPretty)
 
 
@@ -23,7 +21,7 @@ loadSettings = do
   contents <- try $ readTextFile UTF8 filename
   let result = do
         cont <- lmap JsError contents
-        lmap JsonError $ readJSON cont
+        lmap JsonError $ rmap fromOldBSettings $ readJSON cont
   case result of
     Left err -> do
       log $ show err
@@ -33,5 +31,5 @@ loadSettings = do
 saveSettings :: Settings -> Effect Unit
 saveSettings settings = do
   let filename = settingsFn
-  writeTextFile UTF8 filename $ writeJSONPretty 2 settings
+  writeTextFile UTF8 filename $ writeJSONPretty 2 $ toBSettings settings
 

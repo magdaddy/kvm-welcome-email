@@ -1,6 +1,6 @@
 module WelcomeEmail.App.Api.Backend where
 
-import Prelude
+import ThisPrelude
 
 import Affjax (Request, Response, URL, defaultRequest, request)
 import Affjax as AX
@@ -8,39 +8,36 @@ import Affjax.RequestBody (RequestBody, json)
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
-import Control.Monad.Except (ExceptT, catchError, except, lift, throwError, withExceptT)
+import Control.Monad.Except (catchError, lift, throwError)
 import Data.Argonaut (encodeJson)
-import Data.Array (mapMaybe, reverse)
+import Data.Array as A
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
+import Data.Either (note)
 import Data.HTTP.Method (Method(..))
-import Data.Maybe (Maybe(..))
-import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
 import MagLibs.DateFns (parseISO)
 import Simple.JSON (class ReadForeign, readJSON)
 import WelcomeEmail.App.Api.Web (getTokenFromLocalStorage)
 import WelcomeEmail.App.Data (AppError(..))
-import WelcomeEmail.Shared.Boundary (ErrorResponse, LastLogEntry, LastLogType(..), LogLine, LoginData, Settings, TestMailPayload, TestMailResponse, TokenResponse)
+import WelcomeEmail.Shared.Boundary as B
+import WelcomeEmail.Shared.Entry (fromBEntry)
 import WelcomeEmail.Shared.Template (EmailTemplate)
 
 
-login :: LoginData -> ExceptT AppError Aff String
+login :: B.LoginData -> ExceptT AppError Aff String
 login loginData = do
-  let url = "/api/login"
+  let url = "/admin/login"
   let reqBody = json $ encodeJson $ loginData
   response <- (lift $ AX.post ResponseFormat.string url $ Just reqBody) >>= except # withExceptT HttpError
   case readJSON response.body of
     Left err -> case readJSON response.body of -- no token - could be error response
       Left _ -> throwError $ JsonError err
-      Right ({ error } :: ErrorResponse) -> throwError $ ServerError error
-    Right (tokenResponse :: TokenResponse) -> pure tokenResponse.token
+      Right ({ error } :: B.ErrorResponse) -> throwError $ ServerError error
+    Right (tokenResponse :: B.TokenResponse) -> pure tokenResponse.token
 
 
 toggleRunning :: ExceptT AppError Aff { isRunning :: Boolean }
 toggleRunning = do
-  let url = "/api/togglerunning"
+  let url = "/admin/togglerunning"
   liftEffect $ log url
   response <- reqAuth POST url Nothing
   sstate <- parseJsonResponse response
@@ -48,7 +45,7 @@ toggleRunning = do
 
 serverState :: ExceptT AppError Aff { isRunning :: Boolean }
 serverState = do
-  let url = "/api/serverstate"
+  let url = "/admin/serverstate"
   liftEffect $ log url
   response <- reqAuth GET url Nothing
   sstate <- parseJsonResponse response
@@ -57,7 +54,7 @@ serverState = do
 
 getTemplate :: ExceptT AppError Aff EmailTemplate
 getTemplate = do
-  let url = "/api/template"
+  let url = "/admin/template"
   liftEffect $ log url
   response <- reqAuth GET url Nothing
   template <- parseJsonResponse response
@@ -65,33 +62,33 @@ getTemplate = do
 
 saveTemplate :: EmailTemplate -> ExceptT AppError Aff Unit
 saveTemplate template = do
-  let url = "/api/template"
+  let url = "/admin/template"
   liftEffect $ log url
   let reqBody = json $ encodeJson template
   _ <- reqAuth POST url (Just reqBody)
   pure unit
 
 
-getSettings :: ExceptT AppError Aff Settings
+getSettings :: ExceptT AppError Aff B.Settings
 getSettings = do
-  let url = "/api/settings"
+  let url = "/admin/settings"
   liftEffect $ log url
   response <- reqAuth GET url Nothing
   settings <- parseJsonResponse response
-  pure settings
+  pure $ B.fromBSettings settings
 
-saveSettings :: Settings -> ExceptT AppError Aff Unit
+saveSettings :: B.Settings -> ExceptT AppError Aff Unit
 saveSettings settings = do
-  let url = "/api/settings"
+  let url = "/admin/settings"
   liftEffect $ log url
-  let reqBody = json $ encodeJson settings
+  let reqBody = json $ encodeJson $ B.toBSettings settings
   _ <- reqAuth POST url (Just reqBody)
   pure unit
 
 
-sendTestMail :: TestMailPayload -> ExceptT AppError Aff TestMailResponse
+sendTestMail :: B.TestMailPayload -> ExceptT AppError Aff B.TestMailResponse
 sendTestMail pl = do
-  let url = "/api/sendtestmail"
+  let url = "/admin/sendtestmail"
   liftEffect $ log url
   let reqBody = json $ encodeJson pl
   response <- reqAuth POST url (Just reqBody)
@@ -103,45 +100,51 @@ sendTestMail pl = do
   --   Right response -> pure $ lmap JsonError $ readJSON response.body
 
 
-getLastLogs :: ExceptT AppError Aff (Array LastLogEntry)
+getLastLogs :: ExceptT AppError Aff (Array B.LastLogEntry)
 getLastLogs = do
-  let url = "/api/lastlogs"
+  let url = "/admin/lastlogs"
   liftEffect $ log url
   response <- reqAuth GET url Nothing
-  logLines :: Array LogLine <- parseJsonResponse response
-  -- liftEffect $ log $ show logLines
-  -- let resLogLines = map parseLogLine lines
-  -- logLines :: Array LogLine <- case find isLeft resLogLines of
-  --   Just (Left err) -> except (Left err)
-  --   _ -> pure $ mapMaybe hush resLogLines
-  pure $ reverse $ mapMaybe toLogEntry logLines
+  logLines :: Array B.LogLine <- parseJsonResponse response `catchError` \e -> do
+    case e of
+      JsonError _ -> do
+        oldLogLines :: Array B.OldLogLine <- parseJsonResponse response
+        pure $ map B.fromOldLogLine oldLogLines
+      _ -> throwError e
 
-toLogEntry :: LogLine -> Maybe LastLogEntry
+  pure $ A.reverse $ A.mapMaybe toLogEntry logLines
+
+toLogEntry :: B.LogLine -> Maybe B.LastLogEntry
 toLogEntry { timestamp, level, message, wasSent, entry } = result
   where
   result
-    | level == "error" = Just { timestamp: tsDate, type: Error message }
-    | level == "warn" = Just { timestamp: tsDate, type: Warn message }
+    | level == "error" = Just { timestamp: tsDate, type: B.Error message }
+    | level == "warn" = Just { timestamp: tsDate, type: B.Warn message }
     | level == "info" && wasSent == Just true = case entry of
         Nothing -> Nothing
-        Just e -> Just { timestamp: tsDate, type: EmailSent e }
+        Just e -> Just { timestamp: tsDate, type: B.EmailSent $ fromBEntry e }
     | otherwise = Nothing
   tsDate = parseISO timestamp
 
--- parseLogLine :: String -> Either AppError LogLine
--- parseLogLine s = lmap JsonError $ readJSON s
+getRecentlyChanged :: forall m. MonadAff m => ExceptT AppError m (Array B.EntryChange)
+getRecentlyChanged = do
+  let url = "/admin/recently-changed"
+  liftEffect $ log url
+  response <- reqAuth GET url Nothing
+  recentlyChanged :: B.EntryChangeA <- parseJsonResponse response >>= except <<< (note $ OtherError "deserialization failed") <<< B.deSer
+  pure $ unwrap recentlyChanged
+  -- pure $ reverse $ mapMaybe toLogEntry logLines
 
-
-parseJsonResponse :: forall a. ReadForeign a => Response String -> ExceptT AppError Aff a
+parseJsonResponse :: forall a m. MonadAff m => ReadForeign a => Response String -> ExceptT AppError m a
 parseJsonResponse response = except $ lmap JsonError $ readJSON response.body
 
-reqAuth :: Method -> URL -> Maybe RequestBody -> ExceptT AppError Aff (Response String)
+reqAuth :: forall m. MonadAff m => Method -> URL -> Maybe RequestBody -> ExceptT AppError m (Response String)
 reqAuth method url reqBody = do
   token <- getToken
   let r = (authRequest token) { method = Left method, url = url, content = reqBody }
-  response <- (lift $ request $ r) >>= except # withExceptT HttpError
+  response <- (liftAff $ request $ r) >>= except # withExceptT HttpError
   when (response.status == StatusCode 401) do
-    { error: msg } :: ErrorResponse <- parseJsonResponse response
+    { error: msg } :: B.ErrorResponse <- parseJsonResponse response
       `catchError` \_e -> pure { error: response.body }
     throwError $ Unauthorized msg
   when (response.status /= StatusCode 200) do
@@ -154,7 +157,7 @@ authRequest token = defaultRequest
   , headers = [RequestHeader "Authorization" $ "Bearer " <> token]
   }
 
-getToken :: ExceptT AppError Aff String
+getToken :: forall m. MonadAff m => ExceptT AppError m String
 getToken = liftEffect getTokenFromLocalStorage >>= case _ of
   Nothing -> throwError $ Unauthorized "No token"
   Just token -> pure token

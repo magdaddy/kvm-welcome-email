@@ -1,20 +1,15 @@
 module WelcomeEmail.Server.Util where
 
-import Prelude
+import ThisPrelude
 
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
-import Data.Tuple.Nested ((/\))
-import Effect (Effect)
-import Effect.Console (error, log)
+import Effect.Console (error)
 import Effect.Exception (message, name, try)
 import Foreign (Foreign)
 import Node.Process (exit)
-import React.Basic.DOM (a)
 import Simple.JSON (readJSON, readJSON_)
-import WelcomeEmail.Server.Subscription.Entities (BBox)
+import WelcomeEmail.Server.Subscription.Entities (BBox, maxlat, maxlng, minlat, minlng)
 
 
 foreign import dotenvConfig :: Effect Unit
@@ -61,6 +56,11 @@ getPort = do
 
 foreign import getPortImpl :: Effect (Nullable String)
 
+getApiBaseUrl :: forall m. MonadEffect m => m (Maybe String)
+getApiBaseUrl = liftEffect $ getApiBaseUrlImpl >>= pure <<< toMaybe
+
+foreign import getApiBaseUrlImpl :: Effect (Nullable String)
+
 
 unwrapOrExit :: forall a b. Show a => String -> Either a b -> Effect b
 unwrapOrExit msg = case _ of
@@ -103,5 +103,5 @@ isInDach p = isInDe p || isInAt p || isInCh p
 
 foreign import isInBBoxImpl :: forall r. { lat :: Number, lng :: Number | r } -> Array Number -> Boolean
 isInBBox :: forall r. BBox -> { lat :: Number, lng :: Number | r } -> Boolean
-isInBBox (bp1 /\ bp2) p = isInBBoxImpl p [min bp1.lng bp2.lng, min bp1.lat bp2.lat, max bp1.lng bp2.lng, max bp1.lat bp2.lat]
+isInBBox bb p = isInBBoxImpl p [minlng bb, minlat bb, maxlng bb, maxlat bb]
 

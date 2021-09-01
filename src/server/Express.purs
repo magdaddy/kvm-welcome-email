@@ -1,17 +1,13 @@
 module WelcomeEmail.Server.Express where
 
-import Prelude
+import ThisPrelude hiding (log)
 
-import Control.Monad.Except (ExceptT, except, lift, runExceptT, throwError)
-import Data.Array (find)
+import Control.Monad.Except (lift, runExceptT, throwError)
+import Data.Array as A
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), note)
-import Data.Maybe (Maybe(..))
-import Data.String (Pattern(..), stripPrefix)
-import Effect (Effect)
+import Data.Either (note)
+import Data.String as S
 import Effect.Aff (error, forkAff, killFiber)
-import Effect.Aff.Class (liftAff)
-import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import Nmailer (sendTestMail)
@@ -27,73 +23,80 @@ import WelcomeEmail.Server.Core (theloop)
 import WelcomeEmail.Server.Data (AppError(..))
 import WelcomeEmail.Server.LastLogs (loadLastLogs)
 import WelcomeEmail.Server.Log (LogLevel(..), log, logL)
+import WelcomeEmail.Server.Services.RecentlyChanged (defaultRecentlyChangedFiles, recentlyChanged)
 import WelcomeEmail.Server.Settings (loadSettings, saveSettings)
-import WelcomeEmail.Server.Subscription.Api (SubscribePayload, confirm, subscribe)
+import WelcomeEmail.Server.Subscription.Api (ConfirmError(..), SubscribePayload, UnsubscribeError(..))
+import WelcomeEmail.Server.Subscription.Api (confirm, subscribe, unsubscribe) as SubscriptionApi
 import WelcomeEmail.Server.Template (loadTemplate, saveTemplate)
 import WelcomeEmail.Server.Util (getUsers, jwtSign, jwtVerify, tokenSecret)
 import WelcomeEmail.Server.Winston (morgan)
-import WelcomeEmail.Shared.Boundary (LoginData, Settings, TestMailPayload)
+import WelcomeEmail.Shared.Boundary (BSettings, EntryChangeA(..), LoginData, TestMailPayload, fromBSettings, ser, toBSettings)
 import WelcomeEmail.Shared.State (State)
 import WelcomeEmail.Shared.Template (EmailTemplate)
+
+
+type Env = { apiBaseUrl :: String }
 
 foreign import cors :: Middleware
 foreign import text :: Middleware
 foreign import json :: Middleware
 
-server :: Ref State -> App
-server stateRef = do
+server :: Ref State -> Env -> App
+server stateRef env = do
   useExternal morgan
   useExternal cors
   useExternal text
   useExternal json
 
-  post "/api/login" $ do
+  -- admin --
+
+  post "/admin/login" do
     withErrorHandler defErrHandler do
       loginData :: LoginData <- parseJsonReqBody
       result <- liftEffect $ getUsers
       users <- except $ lmap (\err -> OtherError $ "Something's wrong with the users... this should never happen." <> err) result
-      case find (\u -> u.name == loginData.username && u.pwd == loginData.password) users of
+      case A.find (\u -> u.name == loginData.username && u.pwd == loginData.password) users of
         Nothing -> lift $ send { error: "Login failed, wrong credentials." }
         Just _ -> do
           let jwt = jwtSign {} tokenSecret { subject: loginData.username, expiresIn: "1w" }
           lift $ send { token: jwt }
 
-  post "/api/sendtestmail" do
+  post "/admin/sendtestmail" do
     withErrorHandler defErrHandler do
       ensureAuthorized
       pl :: TestMailPayload <- parseJsonReqBody
-      liftEffect $ log $ show pl
+      log $ show pl
       result <- liftAff $ sendTestMail pl.emailAddr
       except result
       lift $ send unit
 
-  get "/api/settings" do
+  get "/admin/settings" do
     withErrorHandler defErrHandler do
       ensureAuthorized
       settings <- liftEffect loadSettings
-      lift $ send $ writeJSON settings
+      lift $ send $ writeJSON $ toBSettings settings
 
-  post "/api/settings" do
+  post "/admin/settings" do
     withErrorHandler defErrHandler do
       ensureAuthorized
-      settings :: Settings <- parseJsonReqBody
-      liftEffect $ saveSettings settings
+      settings :: BSettings <- parseJsonReqBody
+      liftEffect $ saveSettings $ fromBSettings settings
       lift $ send unit
 
-  get "/api/template" do
+  get "/admin/template" do
     withErrorHandler defErrHandler do
       ensureAuthorized
       email <- liftEffect loadTemplate
       lift $ send $ writeJSON email
 
-  post "/api/template" do
+  post "/admin/template" do
     withErrorHandler defErrHandler do
       ensureAuthorized
       templ :: EmailTemplate <- parseJsonReqBody
       liftEffect $ saveTemplate templ
       lift $ send unit
 
-  get "/api/serverstate" do
+  get "/admin/serverstate" do
     withErrorHandler defErrHandler do
       ensureAuthorized
       state <- liftEffect $ Ref.read stateRef
@@ -101,7 +104,7 @@ server stateRef = do
         Nothing -> lift $ send $ writeJSON { isRunning: false }
         Just _fiber -> lift $ send $ writeJSON { isRunning: true }
 
-  post "/api/togglerunning" do
+  post "/admin/togglerunning" do
     withErrorHandler defErrHandler do
       ensureAuthorized
       state <- liftEffect $ Ref.read stateRef
@@ -109,58 +112,94 @@ server stateRef = do
         Nothing -> do
           fiber <- liftAff $ forkAff $ theloop stateRef
           liftEffect $ Ref.modify_ _ { running = Just fiber } stateRef
-          liftEffect $ logL Warn "Sending-service started"
+          logL Warn "Sending-service started"
           lift $ send $ writeJSON { isRunning: true }
         Just fiber -> do
           liftAff $ killFiber (error "stop requested") fiber
           liftEffect $ Ref.modify_ _ { running = Nothing } stateRef
-          liftEffect $ logL Warn "Sending-service stopped"
+          logL Warn "Sending-service stopped"
           lift $ send $ writeJSON { isRunning: false }
 
-  get "/api/lastlogs" do
+  get "/admin/lastlogs" do
     withErrorHandler defErrHandler do
       ensureAuthorized
       result <- liftAff $ runExceptT $ loadLastLogs 300
       lastLogs <- except result
       lift $ send $ lastLogs
 
+  get "/admin/recently-changed" do
+    withErrorHandler defErrHandler do
+      ensureAuthorized
+      ecs <- recentlyChanged defaultRecentlyChangedFiles # withExceptT (OtherError <<< show)
+      lift $ send $ writeJSON $ ser $ EntryChangeA ecs
+
   -- subscribe --
 
   post "/api/subscribe" do
-    withErrorHandler defErrHandler do
+    withErrorHandler apiErrHandler do
       pl :: SubscribePayload <- parseJsonReqBody
-      subscribe pl >>= except
+      SubscriptionApi.subscribe pl env.apiBaseUrl >>= except
       lift $ send unit
 
-  get "/api/confirmSubscription" do
-    withErrorHandler defErrHandler do
+  get "/api/confirm-subscription" do
+    let
+      handler e = send $ message e
+      message = case _ of
+        CENoToken -> "The confirmation token is missing"
+        CESubscriptionDoesNotExist -> "This subscription is not in our database. Maybe you waited too long to confirm?"
+        CEOtherError msg -> msg
+    withErrorHandler handler do
       mbToken <- lift $ getQueryParam "token"
-      token <- except $ note (OtherError "Token missing") mbToken
-      confirm token
+      token <- except $ note CENoToken mbToken
+      SubscriptionApi.confirm token
       lift $ send $ "Email confirmed, subscription active"
+
+  get "/api/unsubscribe" do
+    let
+      handler e = send $ message e
+      message = case _ of
+        UENoToken -> "The unsubscribe token is missing"
+        UESubscriptionDoesNotExist -> "This subscription is not in our database. Maybe you already unsubscribed?"
+        UEOtherError msg -> msg
+    withErrorHandler handler do
+      mbToken <- lift $ getQueryParam "token"
+      token <- except $ note UENoToken mbToken
+      SubscriptionApi.unsubscribe token
+      lift $ send $ "You successfully unsubscribed"
 
   -- -- --
 
   use $ static "./dist"
 
+apiErrHandler :: AppError -> Handler
+apiErrHandler err = case err of
+  JsonError msg -> unprocEntity $ show msg
+  InvalidInput msg -> unprocEntity msg
+  _ -> do
+    log $ show err
+    let status = 500
+    setStatus status
+    send { httpStatus: status, message: "Internal Server Error" }
+  where
+  unprocEntity (msg :: String) = do
+    let status = 422
+    setStatus status
+    send { httpStatus: status, message: msg }
 
 defErrHandler :: AppError -> Handler
 defErrHandler = case _ of
   Unauthorized msg -> setStatus 401 *> send { error: msg }
   err -> do
-    liftEffect $ log $ show err
+    log $ show err
     setStatus 400
     send { error: show err }
 
-runServer :: String -> Int -> Ref State -> Effect Http.Server
-runServer host port stateRef = do
+runServer :: String -> Int -> Ref State -> Env -> Effect Http.Server
+runServer host port stateRef env = do
   logL Warn "Server starting up..."
-  httpServer <- listenHostHttp (server stateRef) port host \_ ->
+  httpServer <- listenHostHttp (server stateRef env) port host \_ ->
     logL Warn $ "Server listening on " <> host <> ":" <> show port
   pure httpServer
-
-sendError :: String -> Handler
-sendError err = send (writeJSON { error: err })
 
 parseJsonReqBody :: forall a. ReadForeign a => ExceptT AppError HandlerM a
 parseJsonReqBody = do
@@ -178,7 +217,7 @@ ensureAuthorized :: ExceptT AppError HandlerM Unit
 ensureAuthorized = do
   mbAuth <- lift $ getRequestHeader "Authorization"
   sauth <- except $ note (Unauthorized "No authorization header") mbAuth
-  token <- case stripPrefix (Pattern "Bearer ") sauth of
+  token <- case S.stripPrefix (S.Pattern "Bearer ") sauth of
     Nothing -> throwError $ Unauthorized "Malformed authorization header"
     Just t -> pure t
   result <- liftEffect $ jwtVerify token
