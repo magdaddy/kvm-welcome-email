@@ -12,14 +12,14 @@ exports.genIdImpl = () => {
   return p1 + p2 + p3 + p4;
 }
 
-exports.genId16Impl = () => {
-  let res = "";
-  for (let i = 0; i < 4; i++) {
-    let s = "";
-    for (let j = 0; j < 3; j++) {
-      s += String.fromCharCode(Math.floor(Math.random() * 256));
-    }
-    res += btoa(s);
-  }
-  return res;
-}
+// exports.genId16Impl = () => {
+//   let res = "";
+//   for (let i = 0; i < 4; i++) {
+//     let s = "";
+//     for (let j = 0; j < 3; j++) {
+//       s += String.fromCharCode(Math.floor(Math.random() * 256));
+//     }
+//     res += btoa(s);
+//   }
+//   return res;
+// }

@@ -3,10 +3,17 @@ module WelcomeEmail.Shared.Util where
 import ThisPrelude
 
 import Control.Monad.Except (runExceptT)
+import Data.Char.Gen (genAlpha, genDigitChar)
+import Data.List (List(..), (:))
+import Data.List.NonEmpty (cons')
+import Data.String as S
+import Data.Tuple.Nested ((/\))
 import Effect.Exception.Unsafe (unsafeThrow)
 import Foreign (Foreign)
 import Partial.Unsafe (unsafeCrashWith)
+import Random.LCG (randomSeed)
 import Simple.JSON (class WriteForeign, write)
+import Test.QuickCheck.Gen (evalGen, frequency, vectorOf)
 
 
 eTodo :: forall a m. MonadEffect m => m a
@@ -27,8 +34,16 @@ genId = liftEffect genIdImpl
 foreign import genIdImpl :: Effect String
 
 genId16 :: forall m. MonadEffect m => m String
-genId16 = liftEffect genId16Impl
-foreign import genId16Impl :: Effect String
+-- genId16 = liftEffect genId16Impl
+-- foreign import genId16Impl :: Effect String
+genId16 = do
+    seed <- liftEffect $ randomSeed
+    pure $ evalGen gen { newSeed: seed, size: 10 }
+  where
+  gen = do
+    arr <- vectorOf 16 $ frequency $ (52.0 /\ genAlpha) `cons'` ((9.0 /\ genDigitChar) : Nil)
+    pure $ S.fromCodePointArray $ map S.codePointFromChar arr
+
 
 repeatMA :: forall m. MonadAff m => Int -> m Unit -> m Unit
 repeatMA i loop

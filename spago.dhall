@@ -19,6 +19,7 @@
   , "http-methods"
   , "integers"
   , "js-date"
+  , "lcg"
   , "lists"
   , "maglibs"
   , "math"
