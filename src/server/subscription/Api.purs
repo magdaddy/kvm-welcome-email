@@ -8,6 +8,7 @@ import Data.Maybe (fromMaybe)
 import Nmailer (NMailer(..))
 import WelcomeEmail.Server.Data (AppError(..))
 import WelcomeEmail.Server.Services.Mailer (class Mailer)
+import WelcomeEmail.Server.Settings (loadSettings)
 import WelcomeEmail.Server.Subscription.Entities (ConfirmationToken, mkBBox)
 import WelcomeEmail.Server.Subscription.Repo (class Repo)
 import WelcomeEmail.Server.Subscription.Repo as Repo
@@ -43,7 +44,8 @@ subscribeFlow pl apiBaseUrl repo mailer = runExceptT do
   ct <- except $ note (InvalidInput $ "Unknown value for changeType: " <> sct) $ Repo.fromBoundaryChangeType sct
   id <- UC.subscribe pl.title pl.email lang bbox tags freq ct repo # withExceptT (OtherError <<< show)
   sub <- Repo.read id repo # withExceptT (OtherError <<< show)
-  token <- withExceptT (OtherError <<< show) $ UC.sendConfirmationMail sub apiBaseUrl mailer `catchError` \e -> do
+  settings <- liftEffect loadSettings
+  token <- withExceptT (OtherError <<< show) $ UC.sendConfirmationMail sub settings.senderAddress apiBaseUrl mailer `catchError` \e -> do
     Repo.delete id repo # withExceptT UC.RepoError
     throwError e
   pure token

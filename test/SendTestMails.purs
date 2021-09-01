@@ -22,10 +22,10 @@ main = launchAff_ do
   runSpec [consoleReporter] do
     it "send confirmation mail english" do
       sub <- generate genSubscription >>= pure <<< _ { lang = EN }
-      void $ UC.sendConfirmationMail sub apiBaseUrl (NMailer unit) # shouldNotThrow
+      void $ UC.sendConfirmationMail sub "from" apiBaseUrl (NMailer unit) # shouldNotThrow
     it "send confirmation mail german" do
       sub <- generate genSubscription >>= pure <<< _ { lang = DE }
-      void $ UC.sendConfirmationMail sub apiBaseUrl (NMailer unit) # shouldNotThrow
+      void $ UC.sendConfirmationMail sub "from" apiBaseUrl (NMailer unit) # shouldNotThrow
     it "send notification mail english, german" do
       let
         genEc = do
@@ -34,7 +34,7 @@ main = launchAff_ do
           pure {changed: ch, entry: e}
       ecs <- generate $ arrayOf1 genEc
       subEn <- generate genSubscription >>= pure <<< _ { lang = EN }
-      void $ UC.sendNotificationMail subEn (toArray ecs) apiBaseUrl (NMailer unit) # shouldNotThrow
+      void $ UC.sendNotificationMail subEn (toArray ecs) "from" apiBaseUrl (NMailer unit) # shouldNotThrow
       subDe <- generate genSubscription >>= pure <<< _ { lang = DE }
-      void $ UC.sendNotificationMail subDe (toArray ecs) apiBaseUrl (NMailer unit) # shouldNotThrow
+      void $ UC.sendNotificationMail subDe (toArray ecs) "from" apiBaseUrl (NMailer unit) # shouldNotThrow
 

@@ -20,6 +20,7 @@ import WelcomeEmail.Server.Services.Mailer (Error, sendEmail) as Mailer
 import WelcomeEmail.Server.Services.Mailer (class Mailer)
 import WelcomeEmail.Server.Services.RecentlyChanged (class RecentlyChanged, defaultRecentlyChangedFiles)
 import WelcomeEmail.Server.Services.RecentlyChanged as RecentlyChanged
+import WelcomeEmail.Server.Settings (loadSettings)
 import WelcomeEmail.Server.Subscription.EmailTemplates (confirmationMail, digestMail)
 import WelcomeEmail.Server.Subscription.Entities (BBox, ChangeType(..), ConfirmationToken, EmailAddr, Frequency(..), Id, Lang, SubscriptionAndDigest, Tag, UnsubscribeToken, Subscription)
 import WelcomeEmail.Server.Subscription.Repo (class Repo, defaultFileRepo)
@@ -62,12 +63,12 @@ unsubscribe token repo = do
 
 sendConfirmationMail :: forall m mailer.
   MonadAff m => Mailer mailer =>
-  Subscription -> String -> mailer -> ExceptT SubscriptionError m ConfirmationToken
-sendConfirmationMail sub apiBaseUrl mailer = do
+  Subscription -> String -> String -> mailer -> ExceptT SubscriptionError m ConfirmationToken
+sendConfirmationMail sub from apiBaseUrl mailer = do
   let token = jwtSign {} sub.secret { subject: sub.id }
   let url = apiBaseUrl <> "/confirm-subscription?token=" <> token
   let { subject, body } = confirmationMail sub url
-  let email = { from: "from", to: [ sub.email ], subject, body }
+  let email = { from, to: [ sub.email ], subject, body }
   _ <- Mailer.sendEmail email mailer >>= withExceptT MailerError <<< except
   pure $ token
 
@@ -80,12 +81,12 @@ confirmSubscription token repo = do
 
 sendNotificationMail :: forall m mailer.
   MonadAff m => Mailer mailer =>
-  Subscription -> Array EntryChange -> String -> mailer -> ExceptT SubscriptionError m UnsubscribeToken
-sendNotificationMail sub digest apiBaseUrl mailer = do
+  Subscription -> Array EntryChange -> String -> String -> mailer -> ExceptT SubscriptionError m UnsubscribeToken
+sendNotificationMail sub digest from apiBaseUrl mailer = do
   let token = jwtSign {} sub.secret { subject: sub.id }
   let url = apiBaseUrl <> "/unsubscribe?token=" <> token
   let { subject, body } = digestMail sub digest url
-  let email = { from: "from", to: [ sub.email ], subject, body }
+  let email = { from, to: [ sub.email ], subject, body }
   _ <- Mailer.sendEmail email mailer >>= withExceptT MailerError <<< except
   pure $ token
 
@@ -108,6 +109,7 @@ runSubscriptionNotificationService apiBaseUrl = do
     mailer = NMailer unit
     loop = do
       -- log "checking subscriptions"
+      settings <- liftEffect $ loadSettings
       now <- liftEffect now
       logExceptConsole do
         entries <- RecentlyChanged.recentlyChanged rc # withExceptT OfdbError
@@ -115,7 +117,7 @@ runSubscriptionNotificationService apiBaseUrl = do
         for_ (A.filter (unconfirmedAndTooOld now) allSubs) \sub -> do
           Repo.delete sub.id repo # withExceptT RepoError
         -- snds <- checkRecentlyChanged now rc repo
-        traverse_ (checkThenSendNotificationAndUpdateLastSent repo mailer now apiBaseUrl entries) allSubs
+        traverse_ (checkThenSendNotificationAndUpdateLastSent repo mailer now settings.senderAddress apiBaseUrl entries) allSubs
       delay $ convertDuration $ Minutes 7.0
       loop
   liftEffect $ launchAff_ loop
@@ -123,11 +125,11 @@ runSubscriptionNotificationService apiBaseUrl = do
 -- PRIVATE USECASES --
 
 checkThenSendNotificationAndUpdateLastSent :: forall m repo mailer. MonadAff m => Repo repo => Mailer mailer =>
-  repo -> mailer -> JSDate -> String -> Array EntryChange -> Subscription -> ExceptT SubscriptionError m Unit
-checkThenSendNotificationAndUpdateLastSent repo mailer now apiBaseUrl entries sub = do
+  repo -> mailer -> JSDate -> String -> String -> Array EntryChange -> Subscription -> ExceptT SubscriptionError m Unit
+checkThenSendNotificationAndUpdateLastSent repo mailer now from apiBaseUrl entries sub = do
   let digest = getDigest sub entries
   when (not A.null digest && subscriptionShouldSendNotification now sub) do
-    sendNotificationMail sub digest apiBaseUrl mailer # runExceptT >>= case _ of
+    sendNotificationMail sub digest from apiBaseUrl mailer # runExceptT >>= case _ of
       Left _ -> pure unit
       Right _ -> Repo.update sub { lastSent = now } repo # withExceptT RepoError
 

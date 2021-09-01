@@ -99,7 +99,7 @@ subscriptionSpec = do
           Nothing -> fail "repo is empty"
           Just sub -> do
             sub.confirmed `shouldEqual` true
-            unsubToken <- UC.sendNotificationMail sub [] apiBaseUrl mockMailer # shouldNotThrow
+            unsubToken <- UC.sendNotificationMail sub [] "from" apiBaseUrl mockMailer # shouldNotThrow
             UC.unsubscribe unsubToken mockRepo # shouldNotThrow
             Repo.mockRepoContent mockRepo `shouldReturn` []
     describe "OfdbApi" do
