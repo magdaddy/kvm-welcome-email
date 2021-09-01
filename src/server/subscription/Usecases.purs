@@ -165,7 +165,7 @@ unconfirmedAndTooOld :: JSDate -> Subscription -> Boolean
 unconfirmedAndTooOld now sub = unconfirmed && tooOld
   where
   unconfirmed = sub.confirmed == false
-  tooOld = DFN.add { minutes: 2 } sub.created < now
+  tooOld = DFN.add { weeks: 2 } sub.created < now
 
 subscriptionShouldSendNotification :: JSDate -> Subscription -> Boolean
 subscriptionShouldSendNotification now sub = sub.confirmed && (subscriptionDueDate sub) < now
