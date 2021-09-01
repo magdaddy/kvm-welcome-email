@@ -107,7 +107,7 @@ runSubscriptionNotificationService apiBaseUrl = do
     repo = defaultFileRepo
     mailer = NMailer unit
     loop = do
-      log "checking subscriptions"
+      -- log "checking subscriptions"
       now <- liftEffect now
       logExceptConsole do
         entries <- RecentlyChanged.recentlyChanged rc # withExceptT OfdbError

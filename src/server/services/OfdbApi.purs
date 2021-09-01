@@ -44,7 +44,7 @@ instance OfdbApi OfdbApiRest where
   getEntriesRecentlyChanged query (OfdbApiRest { baseUrl }) = do
     let route = "/entries/recently-changed"
     let url = S.joinWith "?" [ baseUrl <> route, rcQueryToQueryStr query ]
-    liftEffect $ log url
+    -- liftEffect $ log url
     response <- AX.get ResponseFormat.string url # liftAff >>= except # withExceptT (OtherError <<< AX.printError)
     withExceptT (OtherError <<< S.joinWith "\n" <<< A.fromFoldable <<< (map renderForeignError)) $ except $ rmap (map fromBEntry) $ readJSON response.body
 
