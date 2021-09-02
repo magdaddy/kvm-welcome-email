@@ -9,7 +9,7 @@ info:
     name: AGPLv3
     url: 'https://github.com/slowtec/openfairdb/blob/master/LICENSE'
 servers:
-  - url: 'https://example.com/'
+  - url: 'https://mail.kartevonmorgen.org/api'
     description: Public production server
 paths:
   /subscribe:
@@ -21,36 +21,36 @@ paths:
       responses:
         '200':
           description: Successful response
-        '400':
-          description: Request is invalid
+        '422':
+          description: 'Request is invalid: The JSON request body could not be parsed, required parameters are missing or have illegal values'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  httpStatus:
+                    type: integer
+                  message:
+                    type: string
+        '500':
+          description: 'Internal Server Error: Something else went wrong'
       requestBody:
         content:
           application/json:
             schema:
               description: ''
               type: object
-              x-examples:
-                example-1:
-                  bbox:
-                    lat1: 42.27
-                    lng1: -7.97
-                    lat2: 52.58
-                    lng2: 38.25
-                  email: john.smith@example.com
-                  tags:
-                    - organic
-                    - non-profit
-                  frequency: day
-                  changeType: new
               properties:
+                title:
+                  type: string
                 bbox:
                   type: object
+                  description: ''
                   required:
                     - lat1
                     - lng1
                     - lat2
                     - lng2
-                  description: ''
                   properties:
                     lat1:
                       type: number
@@ -84,10 +84,19 @@ paths:
                     - new
                     - all
                   default: new
+                lang:
+                  type: string
+                  enum:
+                    - en
+                    - de
+                  default: en
               required:
+                - title
                 - bbox
                 - email
         description: |-
+          title: A title for the subscription. This is only for the user to identify different subscriptions, in case he/she subscribes multiple times
+
           bbox: The bounding box to subscribe to
 
           email: The email adress to send notifications to
@@ -102,6 +111,8 @@ paths:
           changeType: What kind of changes to report
           * **new** = report only new entries
           * **all** = report new entries and updates to existing entries
+
+          lang: The language the user wants for the mails.
     parameters: []
 components:
   schemas: {}
