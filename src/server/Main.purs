@@ -32,6 +32,5 @@ main = do
   runRecentlyChangedService
   runSubscriptionNotificationService apiBaseUrl
   _ <- runServer host port stateRef { apiBaseUrl }
-  -- runSocketIo httpServer stateRef
   pure unit
 
