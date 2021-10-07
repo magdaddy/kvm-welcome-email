@@ -3,8 +3,8 @@ module Test.Data where
 import ThisPrelude
 
 import Test.Util (mkDate)
-import WelcomeEmail.Shared.Entry (Entry)
-import WelcomeEmail.Server.Subscription.Entities (BBox, ChangeType(..), Frequency(..), Lang(..), Subscription, mkBBox)
+import KvmMail.Shared.Entry (Entry)
+import KvmMail.Server.Subscription.Entities (BBox, ChangeType(..), Frequency(..), Lang(..), Subscription, mkBBox)
 
 
 bboxLubuMitteLinks = mkBBox { lng: 9.1837, lat: 48.8891 } { lng: 9.1941, lat: 48.9021 } :: BBox

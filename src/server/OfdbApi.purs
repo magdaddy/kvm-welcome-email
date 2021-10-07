@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.OfdbApi where
+module KvmMail.Server.OfdbApi where
 
 import ThisPrelude
 
@@ -8,8 +8,8 @@ import Data.Array as A
 import Data.String as S
 import Data.Tuple (Tuple, fst, snd)
 import Simple.JSON (readJSON)
-import WelcomeEmail.Server.Log (LogLevel(..), logL)
-import WelcomeEmail.Shared.Entry (Entry, fromBEntry)
+import KvmMail.Server.Log (LogLevel(..), logL)
+import KvmMail.Shared.Entry (Entry, fromBEntry)
 
 
 type Query

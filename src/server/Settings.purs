@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Settings where
+module KvmMail.Server.Settings where
 
 import ThisPrelude hiding (log)
 
@@ -6,10 +6,10 @@ import Effect.Exception (try)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (readTextFile, writeTextFile)
 import Simple.JSON (readJSON)
-import WelcomeEmail.Server.Data (AppError(..))
-import WelcomeEmail.Server.Log (log)
-import WelcomeEmail.Shared.Boundary (Settings, defaultSettings, fromOldBSettings, toBSettings)
-import WelcomeEmail.Shared.Util (writeJSONPretty)
+import KvmMail.Server.Data (AppError(..))
+import KvmMail.Server.Log (log)
+import KvmMail.Shared.Boundary (Settings, defaultSettings, fromOldBSettings, toBSettings)
+import KvmMail.Shared.Util (writeJSONPretty)
 
 
 settingsFn = "settings.json" :: String

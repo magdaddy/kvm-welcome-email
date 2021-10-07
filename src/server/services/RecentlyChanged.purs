@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Services.RecentlyChanged where
+module KvmMail.Server.Services.RecentlyChanged where
 
 import ThisPrelude
 
@@ -11,12 +11,12 @@ import Data.Show.Generic (genericShow)
 import Data.Time.Duration (Minutes(..), convertDuration)
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (delay, launchAff_)
-import WelcomeEmail.Server.Services.OfdbApi (class OfdbApi, OfdbApiRest(..), defaultRcQuery, getEntriesRecentlyChanged)
-import WelcomeEmail.Server.Services.SingletonRepo (class SingletonRepo, SingletonFileRepo(..), loadA)
-import WelcomeEmail.Server.Services.SingletonRepo as SingletonRepo
-import WelcomeEmail.Shared.Boundary (EntryChange, EntryChangeA(..))
-import WelcomeEmail.Shared.Entry (Entry)
-import WelcomeEmail.Shared.Util (logExceptConsole)
+import KvmMail.Server.Services.OfdbApi (class OfdbApi, OfdbApiRest(..), defaultRcQuery, getEntriesRecentlyChanged)
+import KvmMail.Server.Services.SingletonRepo (class SingletonRepo, SingletonFileRepo(..), loadA)
+import KvmMail.Server.Services.SingletonRepo as SingletonRepo
+import KvmMail.Shared.Boundary (EntryChange, EntryChangeA(..))
+import KvmMail.Shared.Entry (Entry)
+import KvmMail.Shared.Util (logExceptConsole)
 
 
 data Error

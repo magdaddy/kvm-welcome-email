@@ -1,4 +1,4 @@
-module WelcomeEmail.App.TemplatePage where
+module KvmMail.App.TemplatePage where
 
 import ThisPrelude
 
@@ -14,12 +14,12 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api.Backend as Api
-import WelcomeEmail.App.Data (AppError(..), Page(..))
-import WelcomeEmail.App.TestMail (mkTestMailComponent)
-import WelcomeEmail.Shared.Entry (Entry)
-import WelcomeEmail.Shared.Marked (markedS)
-import WelcomeEmail.Shared.Template (EmailTemplate, _EmailTemplateBody, _EmailTemplateSubject, expand)
+import KvmMail.App.Api.Backend as Api
+import KvmMail.App.Data (AppError(..), Page(..))
+import KvmMail.App.TestMail (mkTestMailComponent)
+import KvmMail.Shared.Entry (Entry)
+import KvmMail.Shared.Marked (markedS)
+import KvmMail.Shared.Template (EmailTemplate, _EmailTemplateBody, _EmailTemplateSubject, expand)
 
 
 mkTemplatePage :: Component { setPage :: Page -> Effect Unit, defaultEntry :: Entry }

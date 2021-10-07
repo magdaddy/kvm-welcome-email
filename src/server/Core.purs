@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Core where
+module KvmMail.Server.Core where
 
 import ThisPrelude
 
@@ -13,14 +13,14 @@ import Effect.Ref as Ref
 import Nmailer (mkMessage, send)
 import NodeMailer (TransportConfig)
 import StateIO (saveState)
-import WelcomeEmail.Server.Log (LogLevel(..), logL, logSent)
-import WelcomeEmail.Server.OfdbApi (getRecentlyChanged)
-import WelcomeEmail.Server.Settings (loadSettings)
-import WelcomeEmail.Server.Template (loadTemplate)
-import WelcomeEmail.Server.Util (isInDach)
-import WelcomeEmail.Shared.Entry (Entry, formatInstantUnix)
-import WelcomeEmail.Shared.State (State)
-import WelcomeEmail.Shared.Template (EmailTemplate, expand)
+import KvmMail.Server.Log (LogLevel(..), logL, logSent)
+import KvmMail.Server.OfdbApi (getRecentlyChanged)
+import KvmMail.Server.Settings (loadSettings)
+import KvmMail.Server.Template (loadTemplate)
+import KvmMail.Server.Util (isInDach)
+import KvmMail.Shared.Entry (Entry, formatInstantUnix)
+import KvmMail.Shared.State (State)
+import KvmMail.Shared.Template (EmailTemplate, expand)
 
 
 sendEmails :: Array Entry -> Aff Unit

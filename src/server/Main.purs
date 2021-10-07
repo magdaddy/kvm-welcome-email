@@ -7,13 +7,13 @@ import Effect.Ref as Ref
 import Nmailer (NMailer(..))
 import Node.Process (exit)
 import StateIO (loadState)
-import WelcomeEmail.Server.Express (runServer)
-import WelcomeEmail.Server.Services.RecentlyChanged (runRecentlyChangedService)
-import WelcomeEmail.Server.Services.SingletonRepo (SingFileRepo(..))
-import WelcomeEmail.Server.Subscription.Repo (defaultFileRepo)
-import WelcomeEmail.Server.Subscription.Usecases (runSubscriptionNotificationService)
-import WelcomeEmail.Server.Util (dotenvConfig, getApiBaseUrl, getHost, getNodeEnv, getPort, getUsers, isOther, unwrapOrExit, unwrapOrExitMb)
-import WelcomeEmail.Shared.JsonCodecs (settingsCdc)
+import KvmMail.Server.Express (runServer)
+import KvmMail.Server.Services.RecentlyChanged (runRecentlyChangedService)
+import KvmMail.Server.Services.SingletonRepo (SingFileRepo(..))
+import KvmMail.Server.Subscription.Repo (defaultFileRepo)
+import KvmMail.Server.Subscription.Usecases (runSubscriptionNotificationService)
+import KvmMail.Server.Util (dotenvConfig, getApiBaseUrl, getHost, getNodeEnv, getPort, getUsers, isOther, unwrapOrExit, unwrapOrExitMb)
+import KvmMail.Shared.JsonCodecs (settingsCdc)
 
 main :: Effect Unit
 main = do

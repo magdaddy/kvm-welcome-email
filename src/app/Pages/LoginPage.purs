@@ -1,4 +1,4 @@
-module WelcomeEmail.App.LoginPage where
+module KvmMail.App.LoginPage where
 
 import ThisPrelude
 
@@ -11,10 +11,10 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Hooks (Component, component, useState, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api.Backend (login)
-import WelcomeEmail.App.Api.Web (saveTokenToLocalStorage)
-import WelcomeEmail.App.Data (Page(..))
-import WelcomeEmail.Shared.Boundary (LoginData)
+import KvmMail.App.Api.Backend (login)
+import KvmMail.App.Api.Web (saveTokenToLocalStorage)
+import KvmMail.App.Data (Page(..))
+import KvmMail.Shared.Boundary (LoginData)
 
 
 mkLoginPage :: Component { setPage :: Page -> Effect Unit }

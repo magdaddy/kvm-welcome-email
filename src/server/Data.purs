@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Data where
+module KvmMail.Server.Data where
 
 import ThisPrelude
 

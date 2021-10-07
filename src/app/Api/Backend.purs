@@ -1,4 +1,4 @@
-module WelcomeEmail.App.Api.Backend where
+module KvmMail.App.Api.Backend where
 
 import ThisPrelude
 
@@ -14,11 +14,11 @@ import Data.Array as A
 import Data.HTTP.Method (Method(..))
 import MagLibs.DateFns (parseISO)
 import Simple.JSON (class ReadForeign, readJSON)
-import WelcomeEmail.App.Api.Web (getTokenFromLocalStorage)
-import WelcomeEmail.App.Data (AppError(..))
-import WelcomeEmail.Shared.Boundary as B
-import WelcomeEmail.Shared.Entry (fromBEntry)
-import WelcomeEmail.Shared.Template (EmailTemplate)
+import KvmMail.App.Api.Web (getTokenFromLocalStorage)
+import KvmMail.App.Data (AppError(..))
+import KvmMail.Shared.Boundary as B
+import KvmMail.Shared.Entry (fromBEntry)
+import KvmMail.Shared.Template (EmailTemplate)
 
 
 login :: B.LoginData -> ExceptT AppError Aff String

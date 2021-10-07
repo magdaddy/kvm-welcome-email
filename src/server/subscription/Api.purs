@@ -1,16 +1,16 @@
-module WelcomeEmail.Server.Subscription.Api where
+module KvmMail.Server.Subscription.Api where
 
 import ThisPrelude
 
 import Control.Monad.Except (catchError, throwError)
-import WelcomeEmail.Server.Data (AppError(..))
-import WelcomeEmail.Server.Services.Mailer (class Mailer)
-import WelcomeEmail.Server.Services.SingletonRepo (class SingRepo, load)
-import WelcomeEmail.Server.Subscription.Entities (ConfirmationToken, mkBBox)
-import WelcomeEmail.Server.Subscription.Repo (class Repo)
-import WelcomeEmail.Server.Subscription.Repo as Repo
-import WelcomeEmail.Server.Subscription.Usecases as UC
-import WelcomeEmail.Shared.Boundary (Settings)
+import KvmMail.Server.Data (AppError(..))
+import KvmMail.Server.Services.Mailer (class Mailer)
+import KvmMail.Server.Services.SingletonRepo (class SingRepo, load)
+import KvmMail.Server.Subscription.Entities (ConfirmationToken, mkBBox)
+import KvmMail.Server.Subscription.Repo (class Repo)
+import KvmMail.Server.Subscription.Repo as Repo
+import KvmMail.Server.Subscription.Usecases as UC
+import KvmMail.Shared.Boundary (Settings)
 
 type SubscribePayload =
   { email :: String

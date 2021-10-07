@@ -1,4 +1,4 @@
-module WelcomeEmail.Shared.Template where
+module KvmMail.Shared.Template where
 
 import ThisPrelude
 
@@ -11,8 +11,8 @@ import Data.String (Pattern(..), Replacement(..), replaceAll)
 import MagLibs.DateFns (format)
 import Simple.JSON (class ReadForeign, class WriteForeign)
 import Type.Prelude (Proxy(..))
-import WelcomeEmail.Shared.Boundary (Email)
-import WelcomeEmail.Shared.Entry (Entry)
+import KvmMail.Shared.Boundary (Email)
+import KvmMail.Shared.Entry (Entry)
 
 newtype EmailTemplate = EmailTemplate Email
 

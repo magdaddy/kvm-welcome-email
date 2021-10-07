@@ -1,4 +1,4 @@
-module WelcomeEmail.Shared.State where
+module KvmMail.Shared.State where
 
 import ThisPrelude
 

@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Template where
+module KvmMail.Server.Template where
 
 import ThisPrelude hiding (log)
 
@@ -6,10 +6,10 @@ import Data.String as S
 import Effect.Exception (try)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (readTextFile, writeTextFile)
-import WelcomeEmail.Server.Data (AppError(..))
-import WelcomeEmail.Server.Log (log)
-import WelcomeEmail.Shared.Boundary (Email)
-import WelcomeEmail.Shared.Template (EmailTemplate(..))
+import KvmMail.Server.Data (AppError(..))
+import KvmMail.Server.Log (log)
+import KvmMail.Shared.Boundary (Email)
+import KvmMail.Shared.Template (EmailTemplate(..))
 
 
 templateFn = "template.txt" :: String

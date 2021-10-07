@@ -1,4 +1,4 @@
-module WelcomeEmail.Shared.Marked
+module KvmMail.Shared.Marked
   ( RawHTML
   , marked
   , markedS

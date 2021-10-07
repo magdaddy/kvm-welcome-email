@@ -9,7 +9,7 @@
     "serve": "parcel dev/index.html",
     "css-build": "node-sass --omit-source-map-url dev/bulma-cfg.scss dev/bulma-cfg.css",
     "css-watch": "npm run css-build -- --watch",
-    "build-prod": "mkdir -p prod && cp dev/index.html dev/bulma-cfg.css prod/ && rm -rf dist && spago bundle-app -m WelcomeEmail.App.Main --to prod/index.js && parcel build prod/index.html --no-scope-hoist --no-source-maps"
+    "build-prod": "mkdir -p prod && cp dev/index.html dev/bulma-cfg.css prod/ && rm -rf dist && spago bundle-app -m KvmMail.App.Main --to prod/index.js && parcel build prod/index.html --no-scope-hoist --no-source-maps"
   },
   "dependencies": {
     "@turf/turf": "^6.5.0",

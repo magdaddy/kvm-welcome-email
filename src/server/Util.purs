@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Util where
+module KvmMail.Server.Util where
 
 import ThisPrelude
 
@@ -8,7 +8,7 @@ import Effect.Exception (message, name, try)
 import Foreign (Foreign)
 import Node.Process (exit)
 import Simple.JSON (readJSON, readJSON_)
-import WelcomeEmail.Server.Subscription.Entities (BBox, maxlat, maxlng, minlat, minlng)
+import KvmMail.Server.Subscription.Entities (BBox, maxlat, maxlng, minlat, minlng)
 
 
 foreign import dotenvConfig :: Effect Unit

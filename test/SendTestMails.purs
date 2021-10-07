@@ -12,8 +12,8 @@ import Test.Spec.Reporter (consoleReporter)
 import Test.Spec.Runner (runSpec)
 import Test.Subscription.CheckRecentlyChanged (generate)
 import Test.Util (mkDate, shouldNotThrow, shouldReturnRight)
-import WelcomeEmail.Server.Subscription.Entities (Lang(..))
-import WelcomeEmail.Server.Subscription.Usecases as UC
+import KvmMail.Server.Subscription.Entities (Lang(..))
+import KvmMail.Server.Subscription.Usecases as UC
 
 apiBaseUrl = "http://localhost:4001/api" :: String
 

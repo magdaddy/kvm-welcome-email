@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.LastLogs where
+module KvmMail.Server.LastLogs where
 
 import ThisPrelude
 
@@ -8,7 +8,7 @@ import Data.String (Pattern(..), joinWith, split)
 import Effect.Aff (try)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile)
-import WelcomeEmail.Server.Data (AppError(..))
+import KvmMail.Server.Data (AppError(..))
 
 
 loadLastLogs :: Int -> ExceptT AppError Aff String

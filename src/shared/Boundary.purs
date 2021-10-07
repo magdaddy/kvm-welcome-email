@@ -1,4 +1,4 @@
-module WelcomeEmail.Shared.Boundary where
+module KvmMail.Shared.Boundary where
 
 import ThisPrelude
 
@@ -6,7 +6,7 @@ import Data.JSDate (JSDate, fromTime, getTime)
 import Math as Math
 import Simple.JSON (class ReadForeign, class WriteForeign)
 import Test.Util (mkDate)
-import WelcomeEmail.Shared.Entry (BEntry, Entry, OldBEntry, fromBEntry, fromOldBEntry, toBEntry)
+import KvmMail.Shared.Entry (BEntry, Entry, OldBEntry, fromBEntry, fromOldBEntry, toBEntry)
 
 type Email =
   { subject :: String

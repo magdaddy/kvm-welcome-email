@@ -1,11 +1,11 @@
-module WelcomeEmail.Server.Subscription.Entities where
+module KvmMail.Server.Subscription.Entities where
 
 import ThisPrelude
 
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toUTCString)
 import Data.Show.Generic (genericShow)
-import WelcomeEmail.Shared.Boundary (EntryChange)
+import KvmMail.Shared.Boundary (EntryChange)
 
 type Id = String
 

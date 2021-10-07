@@ -1,4 +1,4 @@
-module WelcomeEmail.App.RecentlyChangedPage where
+module KvmMail.App.RecentlyChangedPage where
 
 import ThisPrelude
 
@@ -11,10 +11,10 @@ import React.Basic.DOM (css)
 import React.Basic.DOM as R
 import React.Basic.Hooks (Component, JSX, component, useEffectOnce, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api.Backend as Api
-import WelcomeEmail.App.Data (AppError(..), Page(..))
-import WelcomeEmail.Shared.Boundary (EntryChange)
-import WelcomeEmail.Shared.Template (entryLink)
+import KvmMail.App.Api.Backend as Api
+import KvmMail.App.Data (AppError(..), Page(..))
+import KvmMail.Shared.Boundary (EntryChange)
+import KvmMail.Shared.Template (entryLink)
 
 
 mkRecentlyChangedPage :: Component { setPage :: Page -> Effect Unit }

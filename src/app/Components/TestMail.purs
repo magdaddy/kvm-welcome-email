@@ -1,4 +1,4 @@
-module WelcomeEmail.App.TestMail where
+module KvmMail.App.TestMail where
 
 import ThisPrelude
 
@@ -12,7 +12,7 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Hooks (Component, component, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api.Backend as Api
+import KvmMail.App.Api.Backend as Api
 
 
 mkTestMailComponent :: Component {}

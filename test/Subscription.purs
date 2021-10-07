@@ -10,17 +10,17 @@ import Data.Codec.Argonaut (printJsonDecodeError)
 import Effect.Unsafe (unsafePerformEffect)
 import Test.Subscription.CheckRecentlyChanged (checkRecentlyChangedSpec)
 import Test.Util (mkDate, shouldNotThrow, shouldReturnLeft, shouldReturnRight)
-import WelcomeEmail.Server.Services.Mailer (Error(..), MockMailer(..)) as Mailer
-import WelcomeEmail.Server.Services.OfdbApi (OfdbApiRest(..), defaultRcQuery, getEntriesRecentlyChanged)
-import WelcomeEmail.Server.Services.RecentlyChanged (RecentlyChangedFiles(..), updateFeed)
-import WelcomeEmail.Server.Services.SingletonRepo (SingMemRoRepo(..), SingletonFileRepo(..))
-import WelcomeEmail.Server.Subscription.Api (SubscribePayload, subscribeFlow)
-import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Lang(..), Subscription, mkBBox)
-import WelcomeEmail.Server.Subscription.Repo as Repo
-import WelcomeEmail.Server.Subscription.Usecases as UC
-import WelcomeEmail.Shared.Boundary (Settings)
-import WelcomeEmail.Shared.JsonCodecs (jsonDecode, settingsCdc)
-import WelcomeEmail.Shared.Util (throwLeft)
+import KvmMail.Server.Services.Mailer (Error(..), MockMailer(..)) as Mailer
+import KvmMail.Server.Services.OfdbApi (OfdbApiRest(..), defaultRcQuery, getEntriesRecentlyChanged)
+import KvmMail.Server.Services.RecentlyChanged (RecentlyChangedFiles(..), updateFeed)
+import KvmMail.Server.Services.SingletonRepo (SingMemRoRepo(..), SingletonFileRepo(..))
+import KvmMail.Server.Subscription.Api (SubscribePayload, subscribeFlow)
+import KvmMail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Lang(..), Subscription, mkBBox)
+import KvmMail.Server.Subscription.Repo as Repo
+import KvmMail.Server.Subscription.Usecases as UC
+import KvmMail.Shared.Boundary (Settings)
+import KvmMail.Shared.JsonCodecs (jsonDecode, settingsCdc)
+import KvmMail.Shared.Util (throwLeft)
 
 apiBaseUrl = "http://localhost:4001/api" :: String
 

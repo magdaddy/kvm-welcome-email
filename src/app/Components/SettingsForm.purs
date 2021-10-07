@@ -1,4 +1,4 @@
-module WelcomeEmail.App.SettingsForm where
+module KvmMail.App.SettingsForm where
 
 import ThisPrelude
 
@@ -15,10 +15,10 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api.Backend as Api
-import WelcomeEmail.App.Data (AppError(..), Page(..))
-import WelcomeEmail.App.TestMail (mkTestMailComponent)
-import WelcomeEmail.Shared.Boundary (Settings)
+import KvmMail.App.Api.Backend as Api
+import KvmMail.App.Data (AppError(..), Page(..))
+import KvmMail.App.TestMail (mkTestMailComponent)
+import KvmMail.Shared.Boundary (Settings)
 
 
 mkSettingsForm :: Component { setPage :: Page -> Effect Unit }

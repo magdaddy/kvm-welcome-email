@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Services.OfdbApi where
+module KvmMail.Server.Services.OfdbApi where
 
 import ThisPrelude
 
@@ -15,9 +15,9 @@ import Effect.Exception (throw)
 import Foreign (renderForeignError)
 import MagLibs.DateFns as DFN
 import Simple.JSON (readJSON)
-import WelcomeEmail.Server.Data (AffjaxError(..))
-import WelcomeEmail.Server.OfdbApi (makeQueryStr)
-import WelcomeEmail.Shared.Entry (Entry, fromBEntry)
+import KvmMail.Server.Data (AffjaxError(..))
+import KvmMail.Server.OfdbApi (makeQueryStr)
+import KvmMail.Shared.Entry (Entry, fromBEntry)
 
 
 data Error

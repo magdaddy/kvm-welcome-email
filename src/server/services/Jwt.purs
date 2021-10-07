@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Services.Jwt where
+module KvmMail.Server.Services.Jwt where
 
 import ThisPrelude
 

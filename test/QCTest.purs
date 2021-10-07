@@ -30,9 +30,9 @@ import Test.QuickCheck.Gen (Gen, suchThat)
 import Test.QuickCheck.Gen as QCG
 import Test.SensData as SData
 import Test.Util (mkDate)
-import WelcomeEmail.Server.Subscription.Entities (BBox, ChangeType(..), Frequency(..), Lang(..), LatLng, Subscription, intersects, maxlat, maxlng, minlat, minlng, mkBBox)
-import WelcomeEmail.Shared.Boundary (EntryChange)
-import WelcomeEmail.Shared.Entry (Category(..), Entry)
+import KvmMail.Server.Subscription.Entities (BBox, ChangeType(..), Frequency(..), Lang(..), LatLng, Subscription, intersects, maxlat, maxlng, minlat, minlng, mkBBox)
+import KvmMail.Shared.Boundary (EntryChange)
+import KvmMail.Shared.Entry (Category(..), Entry)
 
 qcSpec :: Spec Unit
 qcSpec = do

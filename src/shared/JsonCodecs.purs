@@ -1,4 +1,4 @@
-module WelcomeEmail.Shared.JsonCodecs where
+module KvmMail.Shared.JsonCodecs where
 
 import ThisPrelude
 
@@ -7,8 +7,8 @@ import Data.Codec.Argonaut as CA
 import Data.Codec.Argonaut.Compat (maybe)
 import Data.Codec.Argonaut.Migration as CAM
 import Data.Codec.Argonaut.Record as CAR
-import WelcomeEmail.Shared.Boundary (Email, NodeMailerConfig, Settings)
-import WelcomeEmail.Shared.Entry (BEntry, Entry, fromBEntry, toBEntry)
+import KvmMail.Shared.Boundary (Email, NodeMailerConfig, Settings)
+import KvmMail.Shared.Entry (BEntry, Entry, fromBEntry, toBEntry)
 
 
 jsonDecode :: forall a. CA.JsonCodec a -> Json -> Either CA.JsonDecodeError a

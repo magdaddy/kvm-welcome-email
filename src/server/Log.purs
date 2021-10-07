@@ -1,12 +1,12 @@
-module WelcomeEmail.Server.Log where
+module KvmMail.Server.Log where
 
 import ThisPrelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
 import Simple.JSON (write)
-import WelcomeEmail.Server.Winston as W
-import WelcomeEmail.Shared.Entry (Entry, toBEntry)
+import KvmMail.Server.Winston as W
+import KvmMail.Shared.Entry (Entry, toBEntry)
 
 data LogLevel
   = Error

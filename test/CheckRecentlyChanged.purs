@@ -13,12 +13,12 @@ import Test.QCTest (chooseJSDate, genEntryChangeForSub, genSubscription)
 import Test.QuickCheck (randomSeed)
 import Test.QuickCheck.Gen (Gen, evalGen, vectorOf)
 import Test.Util (mkDate, shouldReturnRight)
-import WelcomeEmail.Server.Services.RecentlyChanged as RecentlyChanged
-import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Subscription)
-import WelcomeEmail.Server.Subscription.Repo as Repo
-import WelcomeEmail.Server.Subscription.Usecases (subscriptionDueDate)
-import WelcomeEmail.Server.Subscription.Usecases as UC
-import WelcomeEmail.Shared.Util (repeatMA)
+import KvmMail.Server.Services.RecentlyChanged as RecentlyChanged
+import KvmMail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Subscription)
+import KvmMail.Server.Subscription.Repo as Repo
+import KvmMail.Server.Subscription.Usecases (subscriptionDueDate)
+import KvmMail.Server.Subscription.Usecases as UC
+import KvmMail.Shared.Util (repeatMA)
 
 checkRecentlyChangedSpec :: Spec Unit
 checkRecentlyChangedSpec = describe "Check recently changed" do

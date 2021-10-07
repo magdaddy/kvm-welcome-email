@@ -1,4 +1,4 @@
-module WelcomeEmail.App.StatusPage where
+module KvmMail.App.StatusPage where
 
 import ThisPrelude
 
@@ -11,10 +11,10 @@ import React.Basic.DOM as R
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, JSX, component, fragment, useEffect, useEffectOnce, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api.Backend as Api
-import WelcomeEmail.App.Data (AppError(..), Page(..))
-import WelcomeEmail.Shared.Boundary (LastLogEntry, LastLogType(..))
-import WelcomeEmail.Shared.Template (entryLink)
+import KvmMail.App.Api.Backend as Api
+import KvmMail.App.Data (AppError(..), Page(..))
+import KvmMail.Shared.Boundary (LastLogEntry, LastLogType(..))
+import KvmMail.Shared.Template (entryLink)
 
 
 mkStatusPage :: Component { setPage :: Page -> Effect Unit }

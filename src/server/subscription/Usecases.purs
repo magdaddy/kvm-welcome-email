@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Subscription.Usecases where
+module KvmMail.Server.Subscription.Usecases where
 
 import ThisPrelude
 
@@ -12,19 +12,19 @@ import Effect.Aff (delay, launchAff_)
 import Foreign (readString)
 import Foreign.Index (readProp)
 import MagLibs.DateFns as DFN
-import WelcomeEmail.Server.Services.Jwt (Error) as Jwt
-import WelcomeEmail.Server.Services.Mailer (Error, sendEmail) as Mailer
-import WelcomeEmail.Server.Services.Mailer (class Mailer)
-import WelcomeEmail.Server.Services.RecentlyChanged (class RecentlyChanged, defaultRecentlyChangedFiles)
-import WelcomeEmail.Server.Services.RecentlyChanged as RecentlyChanged
-import WelcomeEmail.Server.Services.SingletonRepo (class SingRepo, load)
-import WelcomeEmail.Server.Subscription.EmailTemplates (confirmationMail, digestMail)
-import WelcomeEmail.Server.Subscription.Entities (BBox, ChangeType(..), ConfirmationToken, EmailAddr, Frequency(..), Id, Lang, SubscriptionAndDigest, Tag, UnsubscribeToken, Subscription)
-import WelcomeEmail.Server.Subscription.Repo (class Repo)
-import WelcomeEmail.Server.Subscription.Repo as Repo
-import WelcomeEmail.Server.Util (isInBBox, jwtDecode, jwtSign, jwtVerifyS)
-import WelcomeEmail.Shared.Boundary (EntryChange, Settings)
-import WelcomeEmail.Shared.Util (genId16, logExceptConsole)
+import KvmMail.Server.Services.Jwt (Error) as Jwt
+import KvmMail.Server.Services.Mailer (Error, sendEmail) as Mailer
+import KvmMail.Server.Services.Mailer (class Mailer)
+import KvmMail.Server.Services.RecentlyChanged (class RecentlyChanged, defaultRecentlyChangedFiles)
+import KvmMail.Server.Services.RecentlyChanged as RecentlyChanged
+import KvmMail.Server.Services.SingletonRepo (class SingRepo, load)
+import KvmMail.Server.Subscription.EmailTemplates (confirmationMail, digestMail)
+import KvmMail.Server.Subscription.Entities (BBox, ChangeType(..), ConfirmationToken, EmailAddr, Frequency(..), Id, Lang, SubscriptionAndDigest, Tag, UnsubscribeToken, Subscription)
+import KvmMail.Server.Subscription.Repo (class Repo)
+import KvmMail.Server.Subscription.Repo as Repo
+import KvmMail.Server.Util (isInBBox, jwtDecode, jwtSign, jwtVerifyS)
+import KvmMail.Shared.Boundary (EntryChange, Settings)
+import KvmMail.Shared.Util (genId16, logExceptConsole)
 
 
 data SubscriptionError

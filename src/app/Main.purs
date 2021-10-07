@@ -1,4 +1,4 @@
-module WelcomeEmail.App.Main where
+module KvmMail.App.Main where
 
 import ThisPrelude
 
@@ -10,7 +10,7 @@ import Web.DOM.ParentNode (QuerySelector(..), querySelector)
 import Web.HTML (window)
 import Web.HTML.HTMLDocument (toDocument)
 import Web.HTML.Window (document)
-import WelcomeEmail.App.App (mkApp)
+import KvmMail.App.App (mkApp)
 import React.Basic.DOM as R
 
 

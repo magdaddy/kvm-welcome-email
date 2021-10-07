@@ -1,14 +1,14 @@
-module WelcomeEmail.Server.Subscription.EmailTemplates where
+module KvmMail.Server.Subscription.EmailTemplates where
 
 import ThisPrelude
 
 import Data.Number.Format (fixed, toStringWith)
 import Data.String as S
 import Data.String.Utils (padEnd, unsafeRepeat)
-import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Lang(..), Subscription, maxlat, maxlng, minlat, minlng)
-import WelcomeEmail.Shared.Boundary (EntryChange)
-import WelcomeEmail.Shared.Entry (Category(..), CustomLink, Entry)
-import WelcomeEmail.Shared.Entry as EK
+import KvmMail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Lang(..), Subscription, maxlat, maxlng, minlat, minlng)
+import KvmMail.Shared.Boundary (EntryChange)
+import KvmMail.Shared.Entry (Category(..), CustomLink, Entry)
+import KvmMail.Shared.Entry as EK
 
 
 outroHint :: Lang -> String

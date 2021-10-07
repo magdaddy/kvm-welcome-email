@@ -5,7 +5,7 @@ import ThisPrelude
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 
-import WelcomeEmail.Server.Util (isInAt, isInCh, isInDach, isInDe)
+import KvmMail.Server.Util (isInAt, isInCh, isInDach, isInDe)
 
 turfSpec :: Spec Unit
 turfSpec =

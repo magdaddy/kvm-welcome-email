@@ -1,4 +1,4 @@
-module WelcomeEmail.App.Util where
+module KvmMail.App.Util where
 
 import Foreign (Foreign)
 

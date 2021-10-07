@@ -1,11 +1,11 @@
-module WelcomeEmail.App.SettingsPage where
+module KvmMail.App.SettingsPage where
 
 import ThisPrelude
 
 import React.Basic.DOM as R
 import React.Basic.Hooks (Component, component)
-import WelcomeEmail.App.Data (Page)
-import WelcomeEmail.App.SettingsForm (mkSettingsForm)
+import KvmMail.App.Data (Page)
+import KvmMail.App.SettingsForm (mkSettingsForm)
 
 
 mkSettingsPage :: Component { setPage :: Page -> Effect Unit }

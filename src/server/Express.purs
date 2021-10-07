@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Express where
+module KvmMail.Server.Express where
 
 import ThisPrelude hiding (log)
 
@@ -17,21 +17,21 @@ import Node.Express.Response (send, setStatus)
 import Node.Express.Types (Middleware)
 import Node.HTTP (Server) as Http
 import Simple.JSON (class ReadForeign, read, writeJSON)
-import WelcomeEmail.Server.Core (theloop)
-import WelcomeEmail.Server.Data (AppError(..))
-import WelcomeEmail.Server.LastLogs (loadLastLogs)
-import WelcomeEmail.Server.Log (LogLevel(..), log, logL)
-import WelcomeEmail.Server.Services.CrudRepo (FileRepo)
-import WelcomeEmail.Server.Services.RecentlyChanged (defaultRecentlyChangedFiles, recentlyChanged)
-import WelcomeEmail.Server.Services.SingletonRepo (SingFileRepo, load, save)
-import WelcomeEmail.Server.Subscription.Api (ConfirmError(..), SubscribePayload, UnsubscribeError(..))
-import WelcomeEmail.Server.Subscription.Api as SubscriptionApi
-import WelcomeEmail.Server.Template (loadTemplate, saveTemplate)
-import WelcomeEmail.Server.Util (getUsers, jwtSign, jwtVerify, tokenSecret)
-import WelcomeEmail.Server.Winston (morgan)
-import WelcomeEmail.Shared.Boundary (BSettings, EntryChangeA(..), LoginData, TestMailPayload, Settings, fromBSettings, ser, toBSettings)
-import WelcomeEmail.Shared.State (State)
-import WelcomeEmail.Shared.Template (EmailTemplate)
+import KvmMail.Server.Core (theloop)
+import KvmMail.Server.Data (AppError(..))
+import KvmMail.Server.LastLogs (loadLastLogs)
+import KvmMail.Server.Log (LogLevel(..), log, logL)
+import KvmMail.Server.Services.CrudRepo (FileRepo)
+import KvmMail.Server.Services.RecentlyChanged (defaultRecentlyChangedFiles, recentlyChanged)
+import KvmMail.Server.Services.SingletonRepo (SingFileRepo, load, save)
+import KvmMail.Server.Subscription.Api (ConfirmError(..), SubscribePayload, UnsubscribeError(..))
+import KvmMail.Server.Subscription.Api as SubscriptionApi
+import KvmMail.Server.Template (loadTemplate, saveTemplate)
+import KvmMail.Server.Util (getUsers, jwtSign, jwtVerify, tokenSecret)
+import KvmMail.Server.Winston (morgan)
+import KvmMail.Shared.Boundary (BSettings, EntryChangeA(..), LoginData, TestMailPayload, Settings, fromBSettings, ser, toBSettings)
+import KvmMail.Shared.State (State)
+import KvmMail.Shared.Template (EmailTemplate)
 
 
 type Env =

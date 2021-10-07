@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Services.SingletonRepo where
+module KvmMail.Server.Services.SingletonRepo where
 
 import ThisPrelude
 
@@ -9,10 +9,10 @@ import Effect.Exception (message, throw)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, writeTextFile)
 import Simple.JSON (readJSON_)
-import WelcomeEmail.Server.Services.CrudRepo (Error(..))
-import WelcomeEmail.Shared.Boundary (class SerDe, deSer, ser)
-import WelcomeEmail.Shared.JsonCodecs (jsonDecode, jsonEncode)
-import WelcomeEmail.Shared.Util (throwLeft, writeJSONPretty)
+import KvmMail.Server.Services.CrudRepo (Error(..))
+import KvmMail.Shared.Boundary (class SerDe, deSer, ser)
+import KvmMail.Shared.JsonCodecs (jsonDecode, jsonEncode)
+import KvmMail.Shared.Util (throwLeft, writeJSONPretty)
 
 
 class SingRepo repo content | repo -> content where

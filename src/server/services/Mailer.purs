@@ -1,4 +1,4 @@
-module WelcomeEmail.Server.Services.Mailer where
+module KvmMail.Server.Services.Mailer where
 
 import ThisPrelude
 

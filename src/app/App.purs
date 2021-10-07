@@ -1,4 +1,4 @@
-module WelcomeEmail.App.App where
+module KvmMail.App.App where
 
 import ThisPrelude
 
@@ -9,14 +9,14 @@ import React.Basic.DOM as R
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useEffectOnce, useState')
 import React.Basic.Hooks as React
-import WelcomeEmail.App.Api.Web (removeTokenFromLocalStorage)
-import WelcomeEmail.App.Data (Page(..))
-import WelcomeEmail.App.LoginPage (mkLoginPage)
-import WelcomeEmail.App.RecentlyChangedPage (mkRecentlyChangedPage)
-import WelcomeEmail.App.SettingsPage (mkSettingsPage)
-import WelcomeEmail.App.StatusPage (mkStatusPage)
-import WelcomeEmail.App.TemplatePage (mkTemplatePage)
-import WelcomeEmail.Shared.Boundary (defaultSettings)
+import KvmMail.App.Api.Web (removeTokenFromLocalStorage)
+import KvmMail.App.Data (Page(..))
+import KvmMail.App.LoginPage (mkLoginPage)
+import KvmMail.App.RecentlyChangedPage (mkRecentlyChangedPage)
+import KvmMail.App.SettingsPage (mkSettingsPage)
+import KvmMail.App.StatusPage (mkStatusPage)
+import KvmMail.App.TemplatePage (mkTemplatePage)
+import KvmMail.Shared.Boundary (defaultSettings)
 
 
 gPage = StatusPage :: Page

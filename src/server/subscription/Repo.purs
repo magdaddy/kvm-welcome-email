@@ -1,14 +1,14 @@
-module WelcomeEmail.Server.Subscription.Repo where
+module KvmMail.Server.Subscription.Repo where
 
 import ThisPrelude
 
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (fromTime, getTime)
 import Data.Show.Generic (genericShow)
-import WelcomeEmail.Server.Services.CrudRepo (class CrudRepo, FileRepo(..))
-import WelcomeEmail.Server.Services.CrudRepo as CrudRepo
-import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Id, Lang(..), LatLng, Subscription, mkBBox, northEast, southWest)
-import WelcomeEmail.Shared.Boundary (class SerDe)
+import KvmMail.Server.Services.CrudRepo (class CrudRepo, FileRepo(..))
+import KvmMail.Server.Services.CrudRepo as CrudRepo
+import KvmMail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Id, Lang(..), LatLng, Subscription, mkBBox, northEast, southWest)
+import KvmMail.Shared.Boundary (class SerDe)
 
 data Error
   = OtherError String

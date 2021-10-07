@@ -1,4 +1,4 @@
-module WelcomeEmail.App.Api.Web where
+module KvmMail.App.Api.Web where
 
 import ThisPrelude
 
@@ -7,7 +7,7 @@ import Simple.JSON (read)
 import Web.HTML (window)
 import Web.HTML.Window (localStorage)
 import Web.Storage.Storage (getItem, removeItem, setItem)
-import WelcomeEmail.App.Util (jwtDecode)
+import KvmMail.App.Util (jwtDecode)
 
 tokenKey = "token" :: String
 

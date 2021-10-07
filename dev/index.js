@@ -1,1 +1,1 @@
-require("../output/WelcomeEmail.App.Main/index.js").main();
+require("../output/KvmMail.App.Main/index.js").main();

@@ -6,15 +6,15 @@ import Effect.Aff (try)
 import NodeMailer (TransportConfig, Message, createTransporter, sendMail)
 import Record as R
 import Type.Proxy (Proxy(..))
-import WelcomeEmail.Server.Data (AppError(..))
-import WelcomeEmail.Server.Services.Mailer (class Mailer)
-import WelcomeEmail.Server.Services.Mailer as Mailer
-import WelcomeEmail.Server.Settings (loadSettings)
-import WelcomeEmail.Server.Template (loadTemplate)
-import WelcomeEmail.Server.Util (NodeEnv(..), getNodeEnv)
-import WelcomeEmail.Shared.Boundary (Email)
-import WelcomeEmail.Shared.Marked (markedS)
-import WelcomeEmail.Shared.Template (expand)
+import KvmMail.Server.Data (AppError(..))
+import KvmMail.Server.Services.Mailer (class Mailer)
+import KvmMail.Server.Services.Mailer as Mailer
+import KvmMail.Server.Settings (loadSettings)
+import KvmMail.Server.Template (loadTemplate)
+import KvmMail.Server.Util (NodeEnv(..), getNodeEnv)
+import KvmMail.Shared.Boundary (Email)
+import KvmMail.Shared.Marked (markedS)
+import KvmMail.Shared.Template (expand)
 
 
 send :: TransportConfig () -> Message -> Aff (Either AppError Unit)
