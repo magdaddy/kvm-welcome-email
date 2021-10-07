@@ -2,9 +2,7 @@ module WelcomeEmail.Server.Subscription.Usecases where
 
 import ThisPrelude
 
-import Control.Monad.Except (runExceptT)
 import Data.Array as A
-import Data.Bifunctor (lmap)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, now)
 import Data.Show.Generic (genericShow)
@@ -14,19 +12,18 @@ import Effect.Aff (delay, launchAff_)
 import Foreign (readString)
 import Foreign.Index (readProp)
 import MagLibs.DateFns as DFN
-import Nmailer (NMailer(..))
 import WelcomeEmail.Server.Services.Jwt (Error) as Jwt
 import WelcomeEmail.Server.Services.Mailer (Error, sendEmail) as Mailer
 import WelcomeEmail.Server.Services.Mailer (class Mailer)
 import WelcomeEmail.Server.Services.RecentlyChanged (class RecentlyChanged, defaultRecentlyChangedFiles)
 import WelcomeEmail.Server.Services.RecentlyChanged as RecentlyChanged
-import WelcomeEmail.Server.Settings (loadSettings)
+import WelcomeEmail.Server.Services.SingletonRepo (class SingRepo, load)
 import WelcomeEmail.Server.Subscription.EmailTemplates (confirmationMail, digestMail)
 import WelcomeEmail.Server.Subscription.Entities (BBox, ChangeType(..), ConfirmationToken, EmailAddr, Frequency(..), Id, Lang, SubscriptionAndDigest, Tag, UnsubscribeToken, Subscription)
-import WelcomeEmail.Server.Subscription.Repo (class Repo, defaultFileRepo)
+import WelcomeEmail.Server.Subscription.Repo (class Repo)
 import WelcomeEmail.Server.Subscription.Repo as Repo
 import WelcomeEmail.Server.Util (isInBBox, jwtDecode, jwtSign, jwtVerifyS)
-import WelcomeEmail.Shared.Boundary (EntryChange)
+import WelcomeEmail.Shared.Boundary (EntryChange, Settings)
 import WelcomeEmail.Shared.Util (genId16, logExceptConsole)
 
 
@@ -42,11 +39,14 @@ derive instance Generic SubscriptionError _
 instance Show SubscriptionError where show = genericShow
 
 
-subscribe :: forall m repo.
+subscribe :: forall m repo r.
   MonadAff m => Repo repo =>
-  String -> EmailAddr -> Lang -> BBox -> Array Tag -> Frequency -> ChangeType -> repo ->
-  ExceptT Repo.Error m Id
-subscribe title email lang bbox tags frequency changeType repo = do
+  MonadAsk { subscription :: { repo :: repo | r } | r } m =>
+  String -> EmailAddr -> Lang -> BBox -> Array Tag -> Frequency -> ChangeType ->
+  -- ExceptT Repo.Error m Id
+  m (Either Repo.Error Id)
+subscribe title email lang bbox tags frequency changeType = runExceptT do
+  { repo } <- asks _.subscription
   id <- genId16
   secret <- genId16
   now <- liftEffect now
@@ -54,15 +54,18 @@ subscribe title email lang bbox tags frequency changeType repo = do
   Repo.create sub repo
   pure id
 
-unsubscribe :: forall m repo.
+unsubscribe :: forall m repo r.
   MonadAff m => Repo repo =>
-  UnsubscribeToken -> repo -> ExceptT SubscriptionError m Unit
-unsubscribe token repo = do
-  sub <- verifyToken token repo >>= except
+  MonadAsk { subscription :: { repo :: repo | r } | r } m =>
+  UnsubscribeToken -> m (Either SubscriptionError Unit)
+unsubscribe token = runExceptT do
+  { repo } <- asks _.subscription
+  sub <- verifyToken token >>= except
   Repo.delete sub.id repo # withExceptT RepoError
 
 sendConfirmationMail :: forall m mailer.
   MonadAff m => Mailer mailer =>
+  -- Subscription -> String -> String -> mailer -> m (Either SubscriptionError ConfirmationToken)
   Subscription -> String -> String -> mailer -> ExceptT SubscriptionError m ConfirmationToken
 sendConfirmationMail sub from apiBaseUrl mailer = do
   let token = jwtSign {} sub.secret { subject: sub.id }
@@ -72,17 +75,23 @@ sendConfirmationMail sub from apiBaseUrl mailer = do
   _ <- Mailer.sendEmail email mailer >>= withExceptT MailerError <<< except
   pure $ token
 
-confirmSubscription :: forall m repo.
+confirmSubscription :: forall m repo r.
   MonadAff m => Repo repo =>
-  ConfirmationToken -> repo -> ExceptT SubscriptionError m Unit
-confirmSubscription token repo = do
-  sub <- verifyToken token repo >>= except
+  MonadAsk { subscription :: { repo :: repo | r } | r } m =>
+  -- ConfirmationToken -> repo -> ExceptT SubscriptionError m Unit
+  ConfirmationToken -> m (Either SubscriptionError Unit)
+confirmSubscription token = runExceptT do
+  { repo } <- asks _.subscription
+  sub <- verifyToken token >>= except
   Repo.update (sub { confirmed = true }) repo # withExceptT RepoError
 
-sendNotificationMail :: forall m mailer.
+sendNotificationMail :: forall m mailer r.
   MonadAff m => Mailer mailer =>
-  Subscription -> Array EntryChange -> String -> String -> mailer -> ExceptT SubscriptionError m UnsubscribeToken
-sendNotificationMail sub digest from apiBaseUrl mailer = do
+  MonadAsk { subscription :: { mailer :: mailer, apiBaseUrl :: String | r } | r } m =>
+  -- Subscription -> Array EntryChange -> String -> String -> mailer -> ExceptT SubscriptionError m UnsubscribeToken
+  Subscription -> Array EntryChange -> String -> m (Either SubscriptionError UnsubscribeToken)
+sendNotificationMail sub digest from = runExceptT do
+  { mailer, apiBaseUrl } <- asks _.subscription
   let token = jwtSign {} sub.secret { subject: sub.id }
   let url = apiBaseUrl <> "/unsubscribe?token=" <> token
   let { subject, body } = digestMail sub digest url
@@ -90,10 +99,13 @@ sendNotificationMail sub digest from apiBaseUrl mailer = do
   _ <- Mailer.sendEmail email mailer >>= withExceptT MailerError <<< except
   pure $ token
 
-checkRecentlyChanged :: forall m rc repo.
+checkRecentlyChanged :: forall m rc repo r.
   MonadAff m => RecentlyChanged rc => Repo repo =>
-  JSDate -> rc -> repo -> ExceptT SubscriptionError m (Array SubscriptionAndDigest)
-checkRecentlyChanged now rc repo = do
+  MonadAsk { subscription :: { repo :: repo | r } | r } m =>
+  -- JSDate -> rc -> repo -> ExceptT SubscriptionError m (Array SubscriptionAndDigest)
+  JSDate -> rc -> m (Either SubscriptionError (Array SubscriptionAndDigest))
+checkRecentlyChanged now rc = runExceptT do
+  { repo } <- asks _.subscription
   entries <- RecentlyChanged.recentlyChanged rc # withExceptT OfdbError
   allSubs <- Repo.readAll repo # withExceptT RepoError
   -- let allSubs = filterOutOldUnconfirmed allSubs
@@ -101,35 +113,41 @@ checkRecentlyChanged now rc repo = do
   let snds = map (\sub -> { digest: getDigest sub entries, sub }) subs
   pure $ A.filter (\snd -> not A.null snd.digest) snds
 
-runSubscriptionNotificationService :: forall m. MonadEffect m => String -> m Unit
-runSubscriptionNotificationService apiBaseUrl = do
+runSubscriptionNotificationService :: forall m repo mailer settingsRepo r.
+  MonadEffect m => Repo repo => Mailer mailer => SingRepo settingsRepo Settings =>
+  MonadAsk { subscription :: { repo :: repo, mailer :: mailer, apiBaseUrl :: String | r }, settingsRepo :: settingsRepo | r } m =>
+  m Unit
+runSubscriptionNotificationService = do
+  env <- ask
   let
+    repo = env.subscription.repo
     rc = defaultRecentlyChangedFiles
-    repo = defaultFileRepo
-    mailer = NMailer unit
     loop = do
       -- log "checking subscriptions"
-      settings <- liftEffect $ loadSettings
+      settings <- load env.settingsRepo
       now <- liftEffect now
-      logExceptConsole do
+      flip runReaderT env $ logExceptConsole do
         entries <- RecentlyChanged.recentlyChanged rc # withExceptT OfdbError
         allSubs <- Repo.readAll repo # withExceptT RepoError
         for_ (A.filter (unconfirmedAndTooOld now) allSubs) \sub -> do
           Repo.delete sub.id repo # withExceptT RepoError
         -- snds <- checkRecentlyChanged now rc repo
-        traverse_ (checkThenSendNotificationAndUpdateLastSent repo mailer now settings.senderAddress apiBaseUrl entries) allSubs
+        traverse_ (checkThenSendNotificationAndUpdateLastSent now settings.senderAddress entries) allSubs
       delay $ convertDuration $ Minutes 7.0
       loop
   liftEffect $ launchAff_ loop
 
 -- PRIVATE USECASES --
 
-checkThenSendNotificationAndUpdateLastSent :: forall m repo mailer. MonadAff m => Repo repo => Mailer mailer =>
-  repo -> mailer -> JSDate -> String -> String -> Array EntryChange -> Subscription -> ExceptT SubscriptionError m Unit
-checkThenSendNotificationAndUpdateLastSent repo mailer now from apiBaseUrl entries sub = do
+checkThenSendNotificationAndUpdateLastSent :: forall m repo mailer r. MonadAff m => Repo repo => Mailer mailer =>
+  MonadAsk { subscription :: { repo :: repo, mailer :: mailer, apiBaseUrl :: String | r } | r } m =>
+  -- repo -> mailer -> JSDate -> String -> String -> Array EntryChange -> Subscription -> ExceptT SubscriptionError m Unit
+  JSDate -> String -> Array EntryChange -> Subscription -> m (Either SubscriptionError Unit)
+checkThenSendNotificationAndUpdateLastSent now from entries sub = runExceptT do
+  { repo } <- asks _.subscription
   let digest = getDigest sub entries
   when (not A.null digest && subscriptionShouldSendNotification now sub) do
-    sendNotificationMail sub digest from apiBaseUrl mailer # runExceptT >>= case _ of
+    sendNotificationMail sub digest from >>= case _ of
       Left _ -> pure unit
       Right _ -> Repo.update sub { lastSent = now } repo # withExceptT RepoError
 
@@ -148,10 +166,12 @@ getDigest sub entries = A.filter filterFunc entries
       AllEntries -> true
 
 
-verifyToken :: forall m repo. -- jwt.
+verifyToken :: forall m repo r. -- jwt.
   MonadAff m => Repo repo => -- Jwt jwt =>
-  String -> repo -> m (Either SubscriptionError Subscription)
-verifyToken token repo = runExceptT do
+  MonadAsk { subscription :: { repo :: repo | r } | r } m =>
+  String -> m (Either SubscriptionError Subscription)
+verifyToken token = runExceptT do
+  { repo } <- asks _.subscription
   let for = jwtDecode token
   res <- runExceptT do
     sub <- readProp "sub" for

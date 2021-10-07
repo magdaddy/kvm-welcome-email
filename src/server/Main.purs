@@ -4,12 +4,16 @@ import ThisPrelude
 
 import Effect.Console (error)
 import Effect.Ref as Ref
+import Nmailer (NMailer(..))
 import Node.Process (exit)
 import StateIO (loadState)
 import WelcomeEmail.Server.Express (runServer)
 import WelcomeEmail.Server.Services.RecentlyChanged (runRecentlyChangedService)
+import WelcomeEmail.Server.Services.SingletonRepo (SingFileRepo(..))
+import WelcomeEmail.Server.Subscription.Repo (defaultFileRepo)
 import WelcomeEmail.Server.Subscription.Usecases (runSubscriptionNotificationService)
 import WelcomeEmail.Server.Util (dotenvConfig, getApiBaseUrl, getHost, getNodeEnv, getPort, getUsers, isOther, unwrapOrExit, unwrapOrExitMb)
+import WelcomeEmail.Shared.JsonCodecs (settingsCdc)
 
 main :: Effect Unit
 main = do
@@ -29,8 +33,14 @@ main = do
   apiBaseUrl <- getApiBaseUrl >>= unwrapOrExitMb
     "API_BASE_URL is not set. Please set it in .env or on the command line."
 
+  let
+    env =
+      { subscription: { repo: defaultFileRepo, mailer: NMailer unit, apiBaseUrl }
+      , settingsRepo: SingFileRepo { filename: "settings.json", codec: settingsCdc }
+      }
+
   runRecentlyChangedService
-  runSubscriptionNotificationService apiBaseUrl
-  _ <- runServer host port stateRef { apiBaseUrl }
+  runSubscriptionNotificationService # flip runReaderT env
+  _ <- runServer host port stateRef env
   pure unit
 

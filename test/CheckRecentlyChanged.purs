@@ -1,9 +1,8 @@
 module Test.Subscription.CheckRecentlyChanged where
 
-import ThisPrelude
-
 import Test.Spec
 import Test.Spec.Assertions
+import ThisPrelude
 
 import Data.Array as A
 import Data.JSDate (JSDate)
@@ -13,7 +12,7 @@ import Test.Data as Data
 import Test.QCTest (chooseJSDate, genEntryChangeForSub, genSubscription)
 import Test.QuickCheck (randomSeed)
 import Test.QuickCheck.Gen (Gen, evalGen, vectorOf)
-import Test.Util (mkDate, shouldNotThrow)
+import Test.Util (mkDate, shouldReturnRight)
 import WelcomeEmail.Server.Services.RecentlyChanged as RecentlyChanged
 import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Subscription)
 import WelcomeEmail.Server.Subscription.Repo as Repo
@@ -22,7 +21,7 @@ import WelcomeEmail.Server.Subscription.Usecases as UC
 import WelcomeEmail.Shared.Util (repeatMA)
 
 checkRecentlyChangedSpec :: Spec Unit
-checkRecentlyChangedSpec = describeOnly "Check recently changed" do
+checkRecentlyChangedSpec = describe "Check recently changed" do
   it "checkRecentlyChanged" do
     let rcEntries =
           [ { changed: mkDate 2021 8 13 10 0, entry: Data.rapunzelMitteLinks }
@@ -36,10 +35,11 @@ checkRecentlyChangedSpec = describeOnly "Check recently changed" do
       , Data.subMitteRechts
       ]
     let now = mkDate 2021 8 13 12 0
+    let env = { subscription: { repo: mockRepo } }
     UC.subscriptionShouldSendNotification now Data.subMitteLinks `shouldEqual` true
     UC.subscriptionShouldSendNotification now Data.subMitteRechts `shouldEqual` true
     UC.subscriptionShouldSendNotification now Data.subWest `shouldEqual` true
-    _snds <- UC.checkRecentlyChanged now mockRc mockRepo # shouldNotThrow
+    _snds <- UC.checkRecentlyChanged now mockRc # flip runReaderT env # shouldReturnRight
     -- traverse_ (liftEffect <<< log <<< show) snds
     -- let mailer = NMailer unit
     -- traverse_ (\{ sub, digest } -> UC.sendNotificationMail sub digest mailer # shouldNotThrow) snds
@@ -60,7 +60,8 @@ checkRecentlyChangedSpec = describeOnly "Check recently changed" do
       -- traverse_ (log <<< showEntryChange) rces
       mockRepo <- Repo.mkMock subs
       let mockRc = RecentlyChanged.Mock $ Right rces
-      snds <- UC.checkRecentlyChanged now mockRc mockRepo # shouldNotThrow
+      let env = { subscription: { repo: mockRepo } }
+      snds <- UC.checkRecentlyChanged now mockRc # flip runReaderT env # shouldReturnRight
       let resultSubs = map (\snd -> snd.sub) snds
       resultSubs `shouldEqual` subsConfirmed.yes
   it "sends only when subscription is due" do
@@ -75,7 +76,8 @@ checkRecentlyChangedSpec = describeOnly "Check recently changed" do
       rces <- generate $ genECsForSubs subs
       mockRepo <- Repo.mkMock subs
       let mockRc = RecentlyChanged.Mock $ Right rces
-      snds <- UC.checkRecentlyChanged now mockRc mockRepo # shouldNotThrow
+      let env = { subscription: { repo: mockRepo } }
+      snds <- UC.checkRecentlyChanged now mockRc # flip runReaderT env # shouldReturnRight
       let resultSubs = map (\snd -> snd.sub) snds
       resultSubs `shouldEqual` subsDue.yes
 

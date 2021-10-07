@@ -2,12 +2,12 @@ module WelcomeEmail.Shared.Util where
 
 import ThisPrelude
 
-import Control.Monad.Except (runExceptT)
 import Data.Char.Gen (genAlpha, genDigitChar)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (cons')
 import Data.String as S
 import Data.Tuple.Nested ((/\))
+import Effect.Exception (throw)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Foreign (Foreign)
 import Partial.Unsafe (unsafeCrashWith)
@@ -56,3 +56,8 @@ logExceptConsole ex = do
   case res of
     Left err -> log $ show err
     Right _ -> pure unit
+
+throwLeft :: forall m a. MonadEffect m => Either String a -> m a
+throwLeft = case _ of
+  Left err -> liftEffect $ throw err
+  Right result -> pure result

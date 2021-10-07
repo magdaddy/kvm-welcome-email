@@ -11,7 +11,7 @@ import Test.Spec (it)
 import Test.Spec.Reporter (consoleReporter)
 import Test.Spec.Runner (runSpec)
 import Test.Subscription.CheckRecentlyChanged (generate)
-import Test.Util (mkDate, shouldNotThrow)
+import Test.Util (mkDate, shouldNotThrow, shouldReturnRight)
 import WelcomeEmail.Server.Subscription.Entities (Lang(..))
 import WelcomeEmail.Server.Subscription.Usecases as UC
 
@@ -27,6 +27,7 @@ main = launchAff_ do
       sub <- generate genSubscription >>= pure <<< _ { lang = DE }
       void $ UC.sendConfirmationMail sub "from" apiBaseUrl (NMailer unit) # shouldNotThrow
     it "send notification mail english, german" do
+      let env = { subscription: { mailer: NMailer unit, apiBaseUrl } }
       let
         genEc = do
           ch <- chooseJSDate (mkDate 2017 1 1 0 0) (mkDate 2021 1 1 0 0)
@@ -34,7 +35,7 @@ main = launchAff_ do
           pure {changed: ch, entry: e}
       ecs <- generate $ arrayOf1 genEc
       subEn <- generate genSubscription >>= pure <<< _ { lang = EN }
-      void $ UC.sendNotificationMail subEn (toArray ecs) "from" apiBaseUrl (NMailer unit) # shouldNotThrow
+      void $ UC.sendNotificationMail subEn (toArray ecs) "from" # flip runReaderT env # shouldReturnRight
       subDe <- generate genSubscription >>= pure <<< _ { lang = DE }
-      void $ UC.sendNotificationMail subDe (toArray ecs) "from" apiBaseUrl (NMailer unit) # shouldNotThrow
+      void $ UC.sendNotificationMail subDe (toArray ecs) "from" # flip runReaderT env # shouldReturnRight
 

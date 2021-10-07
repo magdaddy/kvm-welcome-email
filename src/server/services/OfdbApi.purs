@@ -4,17 +4,18 @@ import ThisPrelude
 
 import Affjax as AX
 import Affjax.ResponseFormat as ResponseFormat
+import Control.Monad.Except (runExceptT)
 import Data.Array as A
-import Data.Bifunctor (rmap)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate)
 import Data.Show.Generic (genericShow)
 import Data.String as S
 import Data.Tuple.Nested (type (/\), (/\))
-import Effect.Console (log)
+import Effect.Exception (throw)
 import Foreign (renderForeignError)
 import MagLibs.DateFns as DFN
 import Simple.JSON (readJSON)
+import WelcomeEmail.Server.Data (AffjaxError(..))
 import WelcomeEmail.Server.OfdbApi (makeQueryStr)
 import WelcomeEmail.Shared.Entry (Entry, fromBEntry)
 
@@ -35,23 +36,26 @@ type RcQuery =
   }
 
 class OfdbApi ofdbApi where
-  getEntriesRecentlyChanged :: forall m. MonadAff m => RcQuery -> ofdbApi -> ExceptT Error m (Array Entry)
+  getEntriesRecentlyChanged :: forall m. MonadAff m => RcQuery -> ofdbApi -> m (Either AffjaxError (Array Entry))
 
 
 newtype OfdbApiRest = OfdbApiRest { baseUrl :: String }
 
 instance OfdbApi OfdbApiRest where
-  getEntriesRecentlyChanged query (OfdbApiRest { baseUrl }) = do
+  getEntriesRecentlyChanged query (OfdbApiRest { baseUrl }) = runExceptT do
     let route = "/entries/recently-changed"
     let url = S.joinWith "?" [ baseUrl <> route, rcQueryToQueryStr query ]
     -- liftEffect $ log url
-    response <- AX.get ResponseFormat.string url # liftAff >>= except # withExceptT (OtherError <<< AX.printError)
-    withExceptT (OtherError <<< S.joinWith "\n" <<< A.fromFoldable <<< (map renderForeignError)) $ except $ rmap (map fromBEntry) $ readJSON response.body
+    response <- AX.get ResponseFormat.string url # liftAff >>= except # withExceptT AffjaxError
+    -- withExceptT (OtherError <<< S.joinWith "\n" <<< A.fromFoldable <<< (map renderForeignError)) $ except $ rmap (map fromBEntry) $ readJSON response.body
+    case readJSON response.body of
+      Left err -> liftEffect $ throw $ S.joinWith "\n" $ A.fromFoldable $ map renderForeignError err
+      Right bEntries -> pure $ map fromBEntry bEntries
 
-newtype Mock = Mock (Either Error (Array Entry))
+newtype Mock = Mock (Either AffjaxError (Array Entry))
 
 instance OfdbApi Mock where
-  getEntriesRecentlyChanged _query (Mock res) = except res
+  getEntriesRecentlyChanged _query (Mock res) = pure res
 
 
 rcQueryToQueryStr :: RcQuery -> String

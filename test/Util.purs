@@ -3,7 +3,6 @@ module Test.Util where
 import ThisPrelude
 
 import Control.Monad.Error.Class (class MonadThrow, throwError)
-import Control.Monad.Except (runExceptT)
 import Data.Int (toNumber)
 import Data.JSDate (JSDate, jsdate)
 import Effect.Exception (Error, error)
@@ -39,3 +38,18 @@ mkDate year month day hour minute = jsdate
   , second: 0.0
   , millisecond: 0.0
   }
+
+shouldReturnRight :: forall m e t. MonadThrow Error m => Show e => m (Either e t) -> m t
+shouldReturnRight m = do
+  res <- m
+  case res of
+    Left err -> (throwError <<< error) $ show err
+    Right r -> pure r
+
+shouldReturnLeft :: forall m e t. MonadThrow Error m => Show t => m (Either e t) -> m Unit
+shouldReturnLeft m = do
+  res <- m
+  case res of
+    Left _ -> pure unit
+    Right r -> fail $ "Did not throw but returned " <> show r
+

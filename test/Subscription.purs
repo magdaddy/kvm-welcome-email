@@ -4,19 +4,53 @@ import Test.Spec
 import Test.Spec.Assertions
 import ThisPrelude
 
+import Data.Argonaut (jsonParser)
 import Data.Array as A
+import Data.Codec.Argonaut (printJsonDecodeError)
+import Effect.Unsafe (unsafePerformEffect)
 import Test.Subscription.CheckRecentlyChanged (checkRecentlyChangedSpec)
-import Test.Util (mkDate, shouldNotThrow, shouldThrow)
+import Test.Util (mkDate, shouldNotThrow, shouldReturnLeft, shouldReturnRight)
 import WelcomeEmail.Server.Services.Mailer (Error(..), MockMailer(..)) as Mailer
 import WelcomeEmail.Server.Services.OfdbApi (OfdbApiRest(..), defaultRcQuery, getEntriesRecentlyChanged)
 import WelcomeEmail.Server.Services.RecentlyChanged (RecentlyChangedFiles(..), updateFeed)
-import WelcomeEmail.Server.Services.SingletonRepo (SingletonFileRepo(..))
+import WelcomeEmail.Server.Services.SingletonRepo (SingMemRoRepo(..), SingletonFileRepo(..))
 import WelcomeEmail.Server.Subscription.Api (SubscribePayload, subscribeFlow)
 import WelcomeEmail.Server.Subscription.Entities (ChangeType(..), Frequency(..), Lang(..), Subscription, mkBBox)
 import WelcomeEmail.Server.Subscription.Repo as Repo
 import WelcomeEmail.Server.Subscription.Usecases as UC
+import WelcomeEmail.Shared.Boundary (Settings)
+import WelcomeEmail.Shared.JsonCodecs (jsonDecode, settingsCdc)
+import WelcomeEmail.Shared.Util (throwLeft)
 
 apiBaseUrl = "http://localhost:4001/api" :: String
+
+settingsRepo :: SingMemRoRepo Settings
+settingsRepo = SingMemRoRepo $ unsafePerformEffect $ throwLeft $ lmap printJsonDecodeError $
+  jsonDecode settingsCdc $ unsafePerformEffect $ throwLeft $ jsonParser """
+{
+  "senderAddress": "magnus.herold@gmail.com",
+  "nodeMailer": {
+    "secure": false,
+    "port": 1025,
+    "host": "localhost",
+    "auth": { "user": "", "pass": "" }
+  },
+  "defaultEntry": {
+    "version": 33,
+    "title": "Slowtec GmbH",
+    "tags": [],
+    "ratings": [],
+    "lng": 120.7,
+    "license": "",
+    "lat": 37.2,
+    "id": "4c20979fe0754e74875afa4308d73ce7",
+    "description": "",
+    "custom": [],
+    "created": 1234,
+    "country": "the country",
+    "categories": []
+  }
+}"""
 
 exSubscription :: Subscription
 exSubscription =
@@ -80,34 +114,38 @@ subscriptionSpec = do
       it "subscribeFlow works" do
         mockRepo <- Repo.mkMock []
         let mockMailer = Mailer.MockMailer $ Right unit
+        let env = { subscription: { repo: mockRepo, mailer: mockMailer, apiBaseUrl }, settingsRepo }
         let s = exSubPayload
-        _ <- subscribeFlow s apiBaseUrl mockRepo mockMailer >>= except # shouldNotThrow
+        _confToken <- subscribeFlow s # flip runReaderT env # shouldReturnRight
         pure unit
       it "subscribeFlow throws" do
         mockRepo <- Repo.mkMock []
         let mockMailer = Mailer.MockMailer $ Left $ Mailer.OtherError "Mail not send"
+        let env = { subscription: { repo: mockRepo, mailer: mockMailer, apiBaseUrl }, settingsRepo  }
         let s = exSubPayload
-        subscribeFlow s apiBaseUrl mockRepo mockMailer >>= except # shouldThrow
+        subscribeFlow s # flip runReaderT env # shouldReturnLeft
+        pure unit
       it "sub + conf + unsub works" do
         mockRepo <- Repo.mkMock []
         let mockMailer = Mailer.MockMailer $ Right unit
+        let env = { subscription: { repo: mockRepo, mailer: mockMailer, apiBaseUrl }, settingsRepo  }
         let s = exSubPayload
-        confToken <- subscribeFlow s apiBaseUrl mockRepo mockMailer >>= except # shouldNotThrow
-        UC.confirmSubscription confToken mockRepo # shouldNotThrow
+        confToken <- subscribeFlow s # flip runReaderT env # shouldReturnRight
+        UC.confirmSubscription confToken # flip runReaderT env # shouldReturnRight
         rc <- Repo.mockRepoContent mockRepo
         case A.head rc of
           Nothing -> fail "repo is empty"
           Just sub -> do
             sub.confirmed `shouldEqual` true
-            unsubToken <- UC.sendNotificationMail sub [] "from" apiBaseUrl mockMailer # shouldNotThrow
-            UC.unsubscribe unsubToken mockRepo # shouldNotThrow
+            unsubToken <- UC.sendNotificationMail sub [] "from" # flip runReaderT env # shouldReturnRight
+            UC.unsubscribe unsubToken # flip runReaderT env # shouldReturnRight
             Repo.mockRepoContent mockRepo `shouldReturn` []
     describe "OfdbApi" do
       it "ofdbapi" do
         let api = OfdbApiRest { baseUrl: "https://api.ofdb.io/v0" }
         -- let query = defaultRcQuery { since = Just $ mkDate 2021 8 13 12 0, withRatings = Just true }
         let query = defaultRcQuery { withRatings = Just true }
-        entries <- getEntriesRecentlyChanged query api # shouldNotThrow
+        _entries <- getEntriesRecentlyChanged query api # shouldReturnRight
         -- liftEffect $ log $ show entries
         pure unit
       it "recentlyChanged" do

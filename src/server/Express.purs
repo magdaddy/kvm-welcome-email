@@ -2,15 +2,13 @@ module WelcomeEmail.Server.Express where
 
 import ThisPrelude hiding (log)
 
-import Control.Monad.Except (lift, runExceptT, throwError)
+import Control.Monad.Except (lift, throwError)
 import Data.Array as A
-import Data.Bifunctor (lmap)
-import Data.Either (note)
 import Data.String as S
 import Effect.Aff (error, forkAff, killFiber)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import Nmailer (sendTestMail)
+import Nmailer (NMailer, sendTestMail)
 import Node.Express.App (App, get, listenHostHttp, post, use, useExternal)
 import Node.Express.Handler (Handler, HandlerM)
 import Node.Express.Middleware.Static (static)
@@ -23,19 +21,23 @@ import WelcomeEmail.Server.Core (theloop)
 import WelcomeEmail.Server.Data (AppError(..))
 import WelcomeEmail.Server.LastLogs (loadLastLogs)
 import WelcomeEmail.Server.Log (LogLevel(..), log, logL)
+import WelcomeEmail.Server.Services.CrudRepo (FileRepo)
 import WelcomeEmail.Server.Services.RecentlyChanged (defaultRecentlyChangedFiles, recentlyChanged)
-import WelcomeEmail.Server.Settings (loadSettings, saveSettings)
+import WelcomeEmail.Server.Services.SingletonRepo (SingFileRepo, load, save)
 import WelcomeEmail.Server.Subscription.Api (ConfirmError(..), SubscribePayload, UnsubscribeError(..))
-import WelcomeEmail.Server.Subscription.Api (confirm, subscribe, unsubscribe) as SubscriptionApi
+import WelcomeEmail.Server.Subscription.Api as SubscriptionApi
 import WelcomeEmail.Server.Template (loadTemplate, saveTemplate)
 import WelcomeEmail.Server.Util (getUsers, jwtSign, jwtVerify, tokenSecret)
 import WelcomeEmail.Server.Winston (morgan)
-import WelcomeEmail.Shared.Boundary (BSettings, EntryChangeA(..), LoginData, TestMailPayload, fromBSettings, ser, toBSettings)
+import WelcomeEmail.Shared.Boundary (BSettings, EntryChangeA(..), LoginData, TestMailPayload, Settings, fromBSettings, ser, toBSettings)
 import WelcomeEmail.Shared.State (State)
 import WelcomeEmail.Shared.Template (EmailTemplate)
 
 
-type Env = { apiBaseUrl :: String }
+type Env =
+  { subscription :: { repo :: FileRepo, mailer :: NMailer, apiBaseUrl :: String }
+  , settingsRepo :: SingFileRepo Settings
+  }
 
 foreign import cors :: Middleware
 foreign import text :: Middleware
@@ -73,14 +75,16 @@ server stateRef env = do
   get "/admin/settings" do
     withErrorHandler defErrHandler do
       ensureAuthorized
-      settings <- liftEffect loadSettings
+      -- settings <- liftEffect loadSettings
+      settings <- load env.settingsRepo
       lift $ send $ writeJSON $ toBSettings settings
 
   post "/admin/settings" do
     withErrorHandler defErrHandler do
       ensureAuthorized
       settings :: BSettings <- parseJsonReqBody
-      liftEffect $ saveSettings $ fromBSettings settings
+      -- liftEffect $ saveSettings $ fromBSettings settings
+      save (fromBSettings settings) env.settingsRepo
       lift $ send unit
 
   get "/admin/template" do
@@ -138,7 +142,8 @@ server stateRef env = do
   post "/api/subscribe" do
     withErrorHandler apiErrHandler do
       pl :: SubscribePayload <- parseJsonReqBody
-      SubscriptionApi.subscribe pl env.apiBaseUrl >>= except
+      -- SubscriptionApi.subscribe pl env.subscription.apiBaseUrl >>= except
+      _confToken <- flip runReaderT env (SubscriptionApi.subscribeFlow pl) >>= except
       lift $ send unit
 
   get "/api/confirm-subscription" do
@@ -151,7 +156,7 @@ server stateRef env = do
     withErrorHandler handler do
       mbToken <- lift $ getQueryParam "token"
       token <- except $ note CENoToken mbToken
-      SubscriptionApi.confirm token
+      SubscriptionApi.confirm token # flip runReaderT env >>= except
       lift $ send $ "Email confirmed, subscription active"
 
   get "/api/unsubscribe" do
@@ -164,7 +169,7 @@ server stateRef env = do
     withErrorHandler handler do
       mbToken <- lift $ getQueryParam "token"
       token <- except $ note UENoToken mbToken
-      SubscriptionApi.unsubscribe token
+      SubscriptionApi.unsubscribe token # flip runReaderT env >>= except
       lift $ send $ "You successfully unsubscribed"
 
   -- -- --

@@ -27,3 +27,9 @@ instance showAppError :: Show AppError where
     Unauthorized err -> "Unauthorized: " <> err
     InvalidInput err -> "Invalid input: " <> err
     OtherError err -> "OtherError: " <> err
+
+
+newtype AffjaxError = AffjaxError AX.Error
+
+instance Show AffjaxError where
+  show (AffjaxError err) = AX.printError err

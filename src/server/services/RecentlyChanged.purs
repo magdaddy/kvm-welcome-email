@@ -12,7 +12,7 @@ import Data.Time.Duration (Minutes(..), convertDuration)
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (delay, launchAff_)
 import WelcomeEmail.Server.Services.OfdbApi (class OfdbApi, OfdbApiRest(..), defaultRcQuery, getEntriesRecentlyChanged)
-import WelcomeEmail.Server.Services.SingletonRepo (class SingletonRepo, SingletonFileRepo(..), load)
+import WelcomeEmail.Server.Services.SingletonRepo (class SingletonRepo, SingletonFileRepo(..), loadA)
 import WelcomeEmail.Server.Services.SingletonRepo as SingletonRepo
 import WelcomeEmail.Shared.Boundary (EntryChange, EntryChangeA(..))
 import WelcomeEmail.Shared.Entry (Entry)
@@ -34,7 +34,7 @@ newtype RecentlyChangedFiles rcR = RecentlyChangedFiles { recentlyChangedRepo ::
 
 instance RecentlyChanged (RecentlyChangedFiles SingletonFileRepo) where
   recentlyChanged (RecentlyChangedFiles { recentlyChangedRepo }) = do
-    EntryChangeA eca <- load recentlyChangedRepo # withExceptT (OtherError <<< show)
+    EntryChangeA eca <- loadA recentlyChangedRepo # withExceptT (OtherError <<< show)
     pure eca
 
 
@@ -42,12 +42,12 @@ updateFeed :: forall m ofdbApi rcR.
   MonadAff m => OfdbApi ofdbApi => SingletonRepo rcR EntryChangeA =>
   ofdbApi -> RecentlyChangedFiles rcR -> ExceptT Error m Unit
 updateFeed ofdbApi (RecentlyChangedFiles { recentlyChangedRepo }) = do
-  entries <- getEntriesRecentlyChanged defaultRcQuery { withRatings = Just true } ofdbApi # withExceptT (OtherError <<< show)
-  repoEntries :: Array EntryChange <- (SingletonRepo.load recentlyChangedRepo >>= pure <<< unwrap) `catchError` (\_ -> pure []) # withExceptT (OtherError <<< show)
+  entries <- getEntriesRecentlyChanged defaultRcQuery { withRatings = Just true } ofdbApi >>= except # withExceptT (OtherError <<< show)
+  repoEntries :: Array EntryChange <- (SingletonRepo.loadA recentlyChangedRepo >>= pure <<< unwrap) `catchError` (\_ -> pure []) # withExceptT (OtherError <<< show)
   now <- liftEffect now
   let dedupEs = dedupEntries entries repoEntries
   let (newRepoEntries :: Array EntryChange) = ((\entry -> { changed: now, entry }) <$> dedupEs) <> repoEntries
-  SingletonRepo.save (wrap newRepoEntries) recentlyChangedRepo # withExceptT (OtherError <<< show)
+  SingletonRepo.saveA (wrap newRepoEntries) recentlyChangedRepo # withExceptT (OtherError <<< show)
   pure unit
 
 dedupEntries :: Array Entry -> Array EntryChange -> Array Entry
@@ -63,15 +63,15 @@ defaultRecentlyChangedFiles :: RecentlyChangedFiles SingletonFileRepo
 defaultRecentlyChangedFiles = RecentlyChangedFiles { recentlyChangedRepo: SingletonFileRepo "data/recently-changed.json" }
 
 runRecentlyChangedService :: forall m. MonadEffect m => m Unit
-runRecentlyChangedService = do
-  let
-    rcRepo = defaultRecentlyChangedFiles
-    ofdbApi = OfdbApiRest { baseUrl: "https://api.ofdb.io/v0" }
-    loop = do
-      logExceptConsole $ updateFeed ofdbApi rcRepo
-      delay $ convertDuration $ Minutes 11.0
-      loop
-  liftEffect $ launchAff_ loop
+runRecentlyChangedService = liftEffect $ launchAff_ loop
+  where
+  rcRepo = defaultRecentlyChangedFiles
+  ofdbApi = OfdbApiRest { baseUrl: "https://api.ofdb.io/v0" }
+  loop = do
+    logExceptConsole $ updateFeed ofdbApi rcRepo
+    delay $ convertDuration $ Minutes 11.0
+    loop
+
 
 newtype Mock = Mock (Either Error (Array EntryChange))
 
