@@ -2,7 +2,6 @@ module Nmailer where
 
 import ThisPrelude
 
-import Data.Bifunctor (lmap)
 import Effect.Aff (try)
 import NodeMailer (TransportConfig, Message, createTransporter, sendMail)
 import Record as R

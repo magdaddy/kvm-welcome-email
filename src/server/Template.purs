@@ -2,7 +2,6 @@ module WelcomeEmail.Server.Template where
 
 import ThisPrelude hiding (log)
 
-import Data.Bifunctor (lmap)
 import Data.String as S
 import Effect.Exception (try)
 import Node.Encoding (Encoding(..))

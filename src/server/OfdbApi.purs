@@ -5,7 +5,6 @@ import ThisPrelude
 import Affjax as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Data.Array as A
-import Data.Bifunctor (lmap, rmap)
 import Data.String as S
 import Data.Tuple (Tuple, fst, snd)
 import Simple.JSON (readJSON)

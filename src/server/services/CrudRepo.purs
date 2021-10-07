@@ -3,7 +3,6 @@ module WelcomeEmail.Server.Services.CrudRepo where
 import ThisPrelude
 
 import Data.Array as A
-import Data.Either (note)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
 import Data.Traversable (traverse)

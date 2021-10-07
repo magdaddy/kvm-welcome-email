@@ -2,7 +2,6 @@ module StateIO (loadState, saveState) where
 
 import ThisPrelude
 
-import Data.Bifunctor (lmap)
 import Data.DateTime.Instant (Instant, instant, unInstant)
 import Data.Time.Duration (Seconds(..), convertDuration)
 import Node.Encoding (Encoding(..))

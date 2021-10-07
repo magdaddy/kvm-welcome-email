@@ -2,8 +2,6 @@ module WelcomeEmail.App.StatusPage where
 
 import ThisPrelude
 
-import Control.Monad.Except (runExceptT)
-import Data.Bifunctor (rmap)
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (launchAff_)
 import MagLibs.DateFns (format)

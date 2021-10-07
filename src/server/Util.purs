@@ -2,7 +2,6 @@ module WelcomeEmail.Server.Util where
 
 import ThisPrelude
 
-import Data.Bifunctor (lmap)
 import Data.Nullable (Nullable, toMaybe)
 import Effect.Console (error)
 import Effect.Exception (message, name, try)

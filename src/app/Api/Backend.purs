@@ -11,8 +11,6 @@ import Affjax.StatusCode (StatusCode(..))
 import Control.Monad.Except (catchError, lift, throwError)
 import Data.Argonaut (encodeJson)
 import Data.Array as A
-import Data.Bifunctor (lmap)
-import Data.Either (note)
 import Data.HTTP.Method (Method(..))
 import MagLibs.DateFns (parseISO)
 import Simple.JSON (class ReadForeign, readJSON)

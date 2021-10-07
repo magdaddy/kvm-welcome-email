@@ -28,6 +28,8 @@ module ThisPrelude
   , module Data.Void
   -- My Stuff --
   , module Control.Monad.Except
+  , module Control.Monad.Reader
+  , module Data.Bifunctor
   , module Data.Either
   , module Data.Maybe
   , module Data.Newtype
@@ -69,9 +71,11 @@ import Data.Void (Void, absurd)
 
 -- My Stuff --
 
-import Control.Monad.Except (ExceptT, except, withExceptT)
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Control.Monad.Except (ExceptT, except, runExceptT, withExceptT)
+import Control.Monad.Reader (class MonadAsk, ask, asks, runReaderT)
+import Data.Bifunctor (lmap, rmap)
+import Data.Either (Either(..), note)
+import Data.Maybe (fromMaybe, Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Effect (Effect)
 import Effect.Aff (Aff)
